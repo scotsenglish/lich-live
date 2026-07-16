@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root{
     /* ---- Light, bright base theme ---- */
@@ -524,33 +526,18 @@
   </div>
 </div>
 
-<!-- Sync settings (jsonbin.io) -->
+<!-- Sync settings (Firebase) -->
 <div class="overlay" id="syncOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h2>Đồng bộ giữa các máy</h2>
     <div class="hint-note">
-      Dùng <strong>chung 1 Bin ID + API Key</strong> trên tất cả các máy để chia sẻ cùng dữ liệu.<br><br>
-      <strong>Cách lấy:</strong><br>
-      1. Vào <strong>jsonbin.io</strong> → đăng ký miễn phí<br>
-      2. Mục "API Keys" → copy <strong>X-MASTER-KEY</strong><br>
-      3. Bấm "Create Bin", dán nội dung <code>{"entries":[],"rates":[]}</code>, lưu lại → copy <strong>Bin ID</strong> trên URL<br>
-      4. Dán cả 2 giá trị vào đây, làm y hệt trên máy còn lại
+      App đang đồng bộ <strong>real-time qua Firebase</strong>. Mọi thay đổi trên máy này sẽ tự động xuất hiện trên các máy khác đang mở cùng link/file này, và ngược lại — không cần nhập gì thêm.
     </div>
-    <div class="field">
-      <label for="syncBinId">Bin ID</label>
-      <input type="text" id="syncBinId" placeholder="VD: 64f1a2b3c4d5e6f7a8b9c0d1" autocomplete="off">
-    </div>
-    <div class="field">
-      <label for="syncApiKey">API Key (X-Master-Key)</label>
-      <input type="text" id="syncApiKey" placeholder="$2a$10$..." autocomplete="off">
-    </div>
-    <div class="form-error" id="syncFormError"></div>
-    <div class="field-note" id="syncStatus">Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.</div>
+    <div class="field-note" id="syncStatus">Đang kết nối...</div>
     <div class="sheet-actions">
-      <button class="btn danger" id="syncDisable" style="display:none;">Tắt đồng bộ</button>
       <button class="btn ghost" id="syncClose">Đóng</button>
-      <button class="btn primary" id="syncSave">Lưu & đồng bộ ngay</button>
+      <button class="btn primary" id="syncRefreshBtn">🔄 Làm mới</button>
     </div>
   </div>
 </div>
@@ -692,141 +679,93 @@
     scheduleCloudPush();
   }
 
-  // ---------- Cloud sync (jsonbin.io) — đồng bộ giữa các máy, không real-time ----------
-  const SYNC_CONFIG_KEY = 'livestream-sync-config';
-  let syncConfig = null;
+  // ---------- Cloud sync (Firebase Firestore) — đồng bộ real-time giữa các máy ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyBs8KtRuzGqvhpPfkbVU82cggbORMFbk4o",
+    authDomain: "lichlive.firebaseapp.com",
+    projectId: "lichlive",
+    storageBucket: "lichlive.firebasestorage.app",
+    messagingSenderId: "213767465103",
+    appId: "1:213767465103:web:62aa9d7cee2f33eee668fa"
+  };
+
+  let syncDocRef = null;
   let syncPushTimer = null;
+  let firebaseReady = false;
 
-  function loadSyncConfig(){
-    try{ const raw = localStorage.getItem(SYNC_CONFIG_KEY); syncConfig = raw ? JSON.parse(raw) : null; }
-    catch(e){ syncConfig = null; }
-  }
-  function saveSyncConfigLocal(cfg){
-    syncConfig = cfg;
-    try{ localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg)); } catch(e){}
-  }
-  function clearSyncConfig(){
-    syncConfig = null;
-    try{ localStorage.removeItem(SYNC_CONFIG_KEY); } catch(e){}
-  }
   function nowTimeStr(){ const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
-
-  async function cloudPull(){
-    if(!syncConfig) return null;
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}/latest`, {
-      headers: { 'X-Master-Key': syncConfig.apiKey }
-    });
-    if(!res.ok) throw new Error('Không tải được dữ liệu — kiểm tra lại Bin ID / API Key.');
-    const data = await res.json();
-    return data.record || {};
-  }
-  async function cloudPush(){
-    if(!syncConfig) return;
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': syncConfig.apiKey },
-      body: JSON.stringify({ entries, rates })
-    });
-    if(!res.ok) throw new Error('Không đẩy được dữ liệu lên cloud.');
-  }
-  function scheduleCloudPush(){
-    if(!syncConfig) return;
-    if(syncPushTimer) clearTimeout(syncPushTimer);
-    syncPushTimer = setTimeout(async () => {
-      try{ await cloudPush(); setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr()); }
-      catch(e){ setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message); }
-    }, 900);
-  }
   function setSyncStatusText(msg){
     const el = document.getElementById('syncStatus');
     if(el) el.textContent = msg;
   }
 
-  async function attemptInitialSync(){
-    if(!syncConfig) return;
-    setSyncStatusText('Đang đồng bộ...');
+  function initFirebaseSync(){
+    if(typeof firebase === 'undefined'){
+      setSyncStatusText('⚠️ Không tải được Firebase — dữ liệu chỉ lưu trên máy này.');
+      return;
+    }
     try{
-      const remote = await cloudPull();
-      const remoteEntries = Array.isArray(remote.entries) ? remote.entries : [];
-      const remoteRates = Array.isArray(remote.rates) ? remote.rates : [];
-      if(remoteEntries.length === 0 && remoteRates.length === 0 && (entries.length > 0 || rates.length > 0)){
-        // Bin đang trống, máy này đã có dữ liệu sẵn -> đẩy lên để seed cho các máy khác
-        await cloudPush();
-      }else{
-        entries = remoteEntries; rates = remoteRates;
-        saveEntries(); saveRates();
-        renderAll();
-      }
-      setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      syncDocRef = db.collection('lichlive').doc('shared-data');
+      firebaseReady = true;
+      setSyncStatusText('Đang kết nối...');
+      syncDocRef.onSnapshot((doc) => {
+        if(doc.exists){
+          const data = doc.data() || {};
+          entries = Array.isArray(data.entries) ? data.entries : [];
+          rates = Array.isArray(data.rates) ? data.rates : [];
+          try{ localStorage.setItem(KEY_ENTRIES, JSON.stringify(entries)); }catch(e){}
+          try{ localStorage.setItem(KEY_RATES, JSON.stringify(rates)); }catch(e){}
+          renderAll();
+        }else if(entries.length > 0 || rates.length > 0){
+          // Chưa có dữ liệu chung trên cloud, máy này đã có sẵn dữ liệu -> đẩy lên để khởi tạo
+          cloudPush();
+        }
+        setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
+      }, (err) => {
+        setSyncStatusText('⚠️ Lỗi đồng bộ: ' + err.message);
+      });
     }catch(e){
-      setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message);
+      setSyncStatusText('⚠️ Lỗi khởi tạo Firebase: ' + e.message);
     }
   }
 
-  function openSyncModal(){
-    const errEl = document.getElementById('syncFormError');
-    errEl.style.display = 'none'; errEl.textContent = '';
-    const disableBtn = document.getElementById('syncDisable');
-    if(syncConfig){
-      document.getElementById('syncBinId').value = syncConfig.binId;
-      document.getElementById('syncApiKey').value = syncConfig.apiKey;
-      disableBtn.style.display = 'inline-block';
-      setSyncStatusText('Đã bật đồng bộ.');
-    }else{
-      document.getElementById('syncBinId').value = '';
-      document.getElementById('syncApiKey').value = '';
-      disableBtn.style.display = 'none';
-      setSyncStatusText('Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.');
-    }
-    document.getElementById('syncOverlay').classList.add('show');
+  function cloudPush(){
+    if(!firebaseReady || !syncDocRef) return;
+    syncDocRef.set({ entries, rates, updatedAt: Date.now() })
+      .then(() => setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr()))
+      .catch((e) => setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message));
   }
-  document.getElementById('syncBtn').addEventListener('click', openSyncModal);
+  function scheduleCloudPush(){
+    if(!firebaseReady) return;
+    if(syncPushTimer) clearTimeout(syncPushTimer);
+    syncPushTimer = setTimeout(cloudPush, 700);
+  }
+
+  document.getElementById('syncBtn').addEventListener('click', () => {
+    document.getElementById('syncOverlay').classList.add('show');
+  });
   document.getElementById('syncClose').addEventListener('click', () => document.getElementById('syncOverlay').classList.remove('show'));
   document.getElementById('syncOverlay').addEventListener('click', (ev) => {
     if(ev.target === document.getElementById('syncOverlay')) document.getElementById('syncOverlay').classList.remove('show');
   });
-
-  document.getElementById('syncSave').addEventListener('click', async () => {
-    const binId = document.getElementById('syncBinId').value.trim();
-    const apiKey = document.getElementById('syncApiKey').value.trim();
-    const errEl = document.getElementById('syncFormError');
-    errEl.style.display = 'none'; errEl.textContent = '';
-    if(!binId || !apiKey){
-      errEl.textContent = 'Vui lòng nhập đầy đủ Bin ID và API Key.';
-      errEl.style.display = 'block';
-      return;
-    }
-    saveSyncConfigLocal({ binId, apiKey });
-    setSyncStatusText('Đang kết nối...');
+  document.getElementById('syncRefreshBtn').addEventListener('click', async () => {
+    if(!firebaseReady || !syncDocRef){ showToast('Chưa kết nối được Firebase.'); return; }
+    setSyncStatusText('Đang làm mới...');
     try{
-      const remote = await cloudPull();
-      const remoteEntries = Array.isArray(remote.entries) ? remote.entries : [];
-      const remoteRates = Array.isArray(remote.rates) ? remote.rates : [];
-      if(remoteEntries.length === 0 && remoteRates.length === 0){
-        await cloudPush();
-        showToast('Đã kết nối và đẩy dữ liệu hiện tại lên cloud.');
-      }else{
-        entries = remoteEntries; rates = remoteRates;
-        saveEntries(); saveRates();
+      const doc = await syncDocRef.get();
+      if(doc.exists){
+        const data = doc.data() || {};
+        entries = Array.isArray(data.entries) ? data.entries : [];
+        rates = Array.isArray(data.rates) ? data.rates : [];
         renderAll();
-        showToast('Đã kết nối và tải dữ liệu chung từ cloud.');
       }
       setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
-      document.getElementById('syncDisable').style.display = 'inline-block';
+      showToast('Đã làm mới dữ liệu.');
     }catch(e){
-      errEl.textContent = e.message || 'Không kết nối được. Kiểm tra lại Bin ID / API Key.';
-      errEl.style.display = 'block';
-      setSyncStatusText('⚠️ Chưa đồng bộ được.');
+      setSyncStatusText('⚠️ Lỗi: ' + e.message);
     }
-  });
-
-  document.getElementById('syncDisable').addEventListener('click', () => {
-    clearSyncConfig();
-    document.getElementById('syncBinId').value = '';
-    document.getElementById('syncApiKey').value = '';
-    document.getElementById('syncDisable').style.display = 'none';
-    setSyncStatusText('Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.');
-    showToast('Đã tắt đồng bộ.');
   });
 
   // ---------- Derived data ----------
@@ -1492,11 +1431,10 @@
     const now = new Date();
     viewYear = now.getFullYear(); viewMonth = now.getMonth();
     loadAll();
-    loadSyncConfig();
     document.getElementById('loadingMsg').style.display = 'none';
     document.getElementById('viewList').style.display = 'flex';
     renderAll();
-    if(syncConfig) attemptInitialSync();
+    initFirebaseSync();
   })();
 })();
 </script>
