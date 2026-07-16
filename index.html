@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Lịch Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- Light, bright base theme ---- */
+    --bg: #ffffff;
+    --bg-vignette: radial-gradient(ellipse 120% 80% at 50% -8%, #ffffff 0%, #f6f4ef 60%);
+    --panel: #ffffff;
+    --panel-2: #f6f4ef;
+    --border: #e8e3d9;
+    --border-soft: #efebe2;
+    --text: #1e1b17;
+    --muted: #8a8377;
+    --muted-2: #b6ada0;
+    --red: #e0473c;
+    --red-soft-bg: #fdecea;
+    --red-border: #f3c6c1;
+    --gold: #af7c17;
+    --shadow-card: 0 1px 2px rgba(30,27,23,0.04), 0 6px 18px rgba(30,27,23,0.05);
+
+    /* ---- Dark "on-air console" — signature meter block stays dark on purpose ---- */
+    --meter-bg: #1e1b17;
+    --meter-border: #322c24;
+    --meter-text: #f3ede4;
+    --meter-muted: rgba(243,237,228,0.58);
+    --meter-gold: #f2b33d;
+    --meter-gold-glow: rgba(242,179,61,0.35);
+
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 7px;
+    --font-display: 'Manrope', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    background-image: var(--bg-vignette);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  button, input, select { font-family: inherit; }
+  button { -webkit-appearance: none; appearance: none; }
+  ::selection{ background: #f3e4c2; color: var(--text); }
+
+  .app{ max-width: 1100px; margin: 0 auto; padding: 20px 18px 100px; }
+
+  /* ---------- HEADER ---------- */
+  header.top{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap: 10px; }
+  .brand .dot{
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px 1px rgba(224,71,60,0.55);
+    animation: pulse 2.2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  @media (prefers-reduced-motion: reduce){ .dot{ animation: none; } }
+  .brand h1{
+    font-family: var(--font-display); font-weight: 800; font-size: 22px;
+    letter-spacing: 0.03em; text-transform: uppercase; margin: 0; line-height: 1;
+  }
+  .brand h1 span{ color: var(--muted-2); font-weight: 400; }
+  .brand p{ margin: 3px 0 0; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+
+  /* ---------- STAT METER (signature dark console block) ---------- */
+  .meter{
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--meter-border); border: 1px solid var(--meter-border);
+    border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 22px;
+    box-shadow: var(--shadow-card);
+  }
+  .meter .cell{ background: var(--meter-bg); padding: 16px 14px 14px; text-align: center; position: relative; }
+  .meter .cell .num{
+    font-family: var(--font-mono); font-size: clamp(20px, 5.5vw, 32px);
+    font-weight: 500; letter-spacing: 0.01em; line-height: 1.1; color: var(--meter-text);
+  }
+  .meter .cell.money .num{ color: var(--meter-gold); text-shadow: 0 0 14px var(--meter-gold-glow); font-size: clamp(16px, 4.6vw, 26px); }
+  .meter .cell .lbl{ margin-top: 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--meter-muted); font-weight: 600; }
+
+  /* ---------- MONTH NAV ---------- */
+  .monthnav{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; gap: 10px; }
+  .monthnav .center{ display:flex; align-items:center; gap: 4px; }
+  .filter-center{ gap: 6px; }
+  .filter-select{
+    font-family: var(--font-display); font-size: 15px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.02em; color: var(--text);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card);
+    max-width: 44vw;
+  }
+  .filter-select:focus{ border-color: var(--gold); }
+  .tabs button.tab-disabled{ opacity: 0.4; pointer-events: none; }
+  .monthnav .month-label{ font-family: var(--font-display); font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; min-width: 160px; text-align:center; }
+  .iconbtn{
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); display:flex; align-items:center; justify-content:center;
+    cursor: pointer; font-size: 16px; transition: background .15s, border-color .15s; box-shadow: var(--shadow-card);
+  }
+  .iconbtn:hover{ background: var(--panel-2); border-color: var(--muted-2); }
+  .iconbtn:active{ transform: scale(0.94); }
+
+  .pillbtn{
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    padding: 7px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    letter-spacing: 0.03em; white-space: nowrap; box-shadow: var(--shadow-card);
+  }
+  .pillbtn:hover{ color: var(--text); border-color: var(--muted-2); }
+
+  .toolrow{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px; gap: 10px; flex-wrap: wrap; }
+  .toolrow .right-tools{ display:flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- TABS ---------- */
+  .tabs{ display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+  .tabs button{ border: none; background: transparent; color: var(--muted); padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; transition: background .15s, color .15s; }
+  .tabs button.active{ background: var(--panel); color: var(--text); box-shadow: var(--shadow-card); }
+
+  /* ---------- LIST VIEW ---------- */
+  .list{ display: flex; flex-direction: column; gap: 10px; }
+  .entry-card{
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 13px 14px; display: flex; align-items: center; gap: 14px; cursor: pointer;
+    transition: border-color .15s, background .15s; box-shadow: var(--shadow-card);
+  }
+  .entry-card:hover{ border-color: var(--muted-2); background: var(--panel-2); }
+  .entry-card .datebox{ font-family: var(--font-mono); text-align: center; min-width: 54px; color: var(--muted); line-height: 1.15; flex-shrink: 0; }
+  .entry-card .datebox .dd{ font-size: 15px; color: var(--text); font-weight: 500; }
+  .entry-card .datebox .wd{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .entry-card .divider{ width: 1px; align-self: stretch; background: var(--border-soft); flex-shrink:0; }
+  .entry-card .info{ flex: 1; min-width: 0; }
+  .entry-card .info .name{ font-size: 14.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry-card .info .time{ font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .entry-card .amount{ font-family: var(--font-mono); font-size: 13.5px; color: var(--gold); flex-shrink: 0; white-space: nowrap; text-align: right; }
+  .entry-card .amount .ov{ display:block; font-size: 9px; color: var(--muted-2); font-family: var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; }
+
+  .empty{ text-align: center; padding: 50px 20px; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius-lg); background: var(--panel); }
+  .empty .big{ font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .empty .small{ font-size: 13px; }
+
+  /* ---------- CALENDAR VIEW ---------- */
+  .cal-wrap{ background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px; box-shadow: var(--shadow-card); }
+  .cal-weekdays{ display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+  .cal-weekdays div{ text-align: center; font-size: 10.5px; letter-spacing: 0.08em; color: var(--muted-2); font-weight: 600; padding: 6px 0; }
+  .cal-grid{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-cell{
+    aspect-ratio: 1 / 1; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+    cursor: pointer; padding: 4px; transition: border-color .15s, background .15s;
+  }
+  .cal-cell:hover{ border-color: var(--muted-2); }
+  .cal-cell .dnum{ font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+  .cal-cell.outside{ opacity: 0.32; cursor: default; }
+  .cal-cell.outside:hover{ border-color: transparent; }
+  .cal-cell.today{ border-color: var(--gold); }
+  .cal-cell.today .dnum{ color: var(--gold); font-weight: 600; }
+  .cal-cell .dots{ position: absolute; bottom: 6px; display: flex; gap: 3px; }
+  .cal-cell .dots span{ width: 4px; height: 4px; border-radius: 50%; background: var(--red); }
+  .cal-cell .count-badge{ position: absolute; top: 3px; right: 4px; font-family: var(--font-mono); font-size: 9px; color: var(--muted); }
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position: fixed; right: 22px; bottom: 22px; width: 56px; height: 56px; border-radius: 50%;
+    background: var(--red); color: #fff; border: none; font-size: 26px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 22px rgba(224,71,60,0.35);
+    cursor: pointer; z-index: 40; transition: transform .12s;
+  }
+  .fab:active{ transform: scale(0.92); }
+
+  /* ---------- MODAL / SHEET ---------- */
+  .overlay{ position: fixed; inset: 0; background: rgba(30,26,20,0.4); backdrop-filter: blur(2px); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+  .overlay.show{ display: flex; }
+  .sheet{
+    background: var(--panel); border: 1px solid var(--border); width: 100%; max-width: 480px;
+    border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height: 88vh; overflow-y: auto; animation: slideup .22s ease-out;
+    box-shadow: 0 -8px 30px rgba(30,26,20,0.12);
+  }
+  @keyframes slideup{ from{ transform: translateY(24px); opacity: 0; } to{ transform: translateY(0); opacity: 1; } }
+  @media (min-width: 640px){
+    .overlay{ align-items: center; }
+    .sheet{ border-radius: 16px; animation: popin .18s ease-out; box-shadow: 0 20px 50px rgba(30,26,20,0.16); }
+    @keyframes popin{ from{ transform: scale(0.96); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+  }
+  .sheet-handle{ width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 16px; }
+  @media (min-width: 640px){ .sheet-handle{ display:none; } }
+  .sheet h2{ font-family: var(--font-display); font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 16px; }
+
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em; }
+  .field input, .field select{
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius-sm); padding: 11px 12px; font-size: 15px; outline: none;
+  }
+  .field input:focus, .field select:focus{ border-color: var(--gold); }
+  .field input::-webkit-calendar-picker-indicator{ cursor: pointer; }
+  .field input:disabled{ opacity: 0.55; }
+  .field select{ cursor: pointer; }
+  .row2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .combo-wrap{ position: relative; }
+  .combo-list{
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--panel);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 210px; overflow-y: auto;
+    z-index: 25; display: none; box-shadow: 0 12px 28px rgba(30,26,20,0.16);
+  }
+  .combo-item{ padding: 10px 12px; font-family: var(--font-mono); font-size: 14px; cursor: pointer; }
+  .combo-item:hover{ background: var(--panel-2); color: var(--gold); }
+  .combo-item + .combo-item{ border-top: 1px solid var(--border-soft); }
+  .combo-empty{ padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+  .date-display-fake{
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius-sm); padding: 11px 12px; font-size: 15px; font-family: var(--font-body);
+    white-space: nowrap; overflow: hidden; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .date-display-fake::after{ content: '📅'; font-size: 14px; opacity: 0.6; flex-shrink: 0; }
+  .date-display-fake:active{ border-color: var(--gold); }
+  .b-date-overlay{ font-size: 13px; padding: 9px 10px; background: var(--panel); flex: 0 0 132px; }
+  .field-note{ font-size: 11.5px; color: var(--muted-2); margin-top: 6px; }
+
+  /* ---------- CUSTOM DATE PICKER (tiếng Việt, không phụ thuộc máy) ---------- */
+  .dp-label{ font-family: var(--font-display); font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .cal-cell.dp-selected{ background: var(--gold); }
+  .cal-cell.dp-selected .dnum{ color: #fff; font-weight: 700; }
+  .cal-cell.outside{ cursor: pointer; }
+
+  .field-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
+  .field-head label{ margin-bottom: 0; }
+  .checkline{ display:flex; align-items:center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .checkline input[type="checkbox"]{ width: auto; accent-color: var(--gold); }
+  .amount-hint{ font-size: 11.5px; color: var(--muted-2); margin-top: 6px; line-height: 1.4; }
+  .hint-note{ font-size: 12px; color: var(--muted); background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px; }
+
+  .sheet-actions{ display: flex; gap: 10px; margin-top: 18px; }
+  .btn{ flex: 1; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.02em; background: var(--panel); color: var(--text); }
+  .btn.primary{ background: var(--gold); color: #fff; border-color: var(--gold); }
+  .btn.primary:active{ transform: scale(0.98); }
+  .btn.ghost{ background: transparent; color: var(--muted); }
+  .btn.ghost:hover{ color: var(--text); }
+  .btn.danger{ background: var(--red-soft-bg); color: var(--red); border-color: var(--red-border); flex: 0 0 auto; padding: 12px 16px; }
+  .btn.danger:hover{ background: #fbdedb; }
+
+  .daylist{ display:flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .daylist .di{ display:flex; justify-content: space-between; align-items:center; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer; }
+  .daylist .di:hover{ border-color: var(--muted-2); }
+  .daylist .di .n{ font-size: 13.5px; font-weight: 600; }
+  .daylist .di .t{ font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .daylist .di .a{ font-family: var(--font-mono); font-size: 12.5px; color: var(--gold); flex-shrink:0; margin-left: 10px; text-align:right; }
+  .daylist .none{ color: var(--muted); font-size: 13px; padding: 6px 2px 2px; }
+
+  /* ---------- BATCH ADD ---------- */
+  .batch-row{ border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; background: var(--panel-2); position: relative; }
+  .batch-row.row-error{ border-color: var(--red-border); background: var(--red-soft-bg); }
+  .batch-row .row-top{ display:flex; gap:8px; margin-bottom:8px; align-items: flex-start; }
+  .batch-row .row-top .b-rate{ flex: 1 1 auto; min-width: 0; }
+  .batch-row .row-mid{ margin-bottom: 8px; }
+  .batch-row .row-bottom{ display:flex; gap:8px; align-items:center; }
+  .batch-row .row-bottom .b-amount{ flex: 1; }
+  .batch-row select, .batch-row input[type="text"], .batch-row input[type="date"], .batch-row input[type="number"]{
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius-sm); padding: 9px 10px; font-size: 14px; outline: none; width: 100%;
+  }
+  .batch-row select:focus, .batch-row input:focus{ border-color: var(--gold); }
+  .row-del{ flex: 0 0 auto; width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .row-del:hover{ color:var(--red); border-color:var(--red-border); }
+  .row-warn{ display:none; color: var(--red); font-size: 11.5px; margin-top: 7px; }
+  .batch-add-row-btn{ width:100%; padding:11px; border:1px dashed var(--border); border-radius:var(--radius-sm); background:transparent; color:var(--muted); font-size:13px; cursor:pointer; margin-bottom:14px; }
+  .batch-add-row-btn:hover{ color:var(--text); border-color:var(--muted-2); }
+  .batch-status{ font-size: 12.5px; color: var(--muted); margin-bottom: 12px; min-height: 1em; }
+
+  /* ---------- NOTICE BOARD: hôm nay / ngày mai ---------- */
+  .notice-board{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 560px){ .notice-board{ grid-template-columns: 1fr; } }
+  .notice-col{ background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; box-shadow: var(--shadow-card); }
+  .notice-head{
+    font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em;
+    display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; color: var(--text);
+  }
+  .notice-date{ font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .notice-list{ display:flex; flex-direction: column; gap: 7px; }
+  .notice-item{ display:flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; }
+  .notice-item .notice-time{ font-family: var(--font-mono); color: var(--gold); flex-shrink: 0; font-size: 12.5px; }
+  .notice-item .notice-name{ color: var(--text); font-weight: 500; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .notice-empty{ font-size: 12.5px; color: var(--muted); font-style: italic; }
+
+  .form-error{ font-size: 12.5px; color: var(--red); background: var(--red-soft-bg); border: 1px solid var(--red-border); border-radius: var(--radius-sm); padding: 9px 11px; margin-bottom: 12px; display:none; }
+  .btn.danger.confirm-armed{ background: var(--red); color: #fff; border-color: var(--red); }
+
+  .toast{
+    position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%) translateY(10px);
+    background: var(--text); color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; box-shadow: 0 10px 24px rgba(30,27,23,0.25);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 80;
+    white-space: nowrap;
+  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .search-input{
+    width: 100%; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 11px 16px; font-size: 14px; outline: none;
+    margin-top: 14px; box-shadow: var(--shadow-card);
+  }
+  .search-input:focus{ border-color: var(--gold); }
+  .search-input::placeholder{ color: var(--muted); }
+
+  .loading-msg{ text-align:center; color: var(--muted); padding: 60px 0; font-size: 13px; }
+
+  @media (max-width: 480px){
+    .app{ padding: 16px 12px 100px; }
+    .meter .cell{ padding: 13px 8px 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Lịch <span>Live</span></h1>
+        <p>Quản lý lịch phát trực tiếp hằng tháng</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice-board" id="noticeBoard">
+    <div class="notice-col">
+      <div class="notice-head">📌 Hôm nay <span class="notice-date" id="noticeTodayDate"></span></div>
+      <div class="notice-list" id="noticeTodayList"></div>
+    </div>
+    <div class="notice-col">
+      <div class="notice-head">Ngày mai <span class="notice-date" id="noticeTomorrowDate"></span></div>
+      <div class="notice-list" id="noticeTomorrowList"></div>
+    </div>
+  </div>
+
+  <div class="meter">
+    <div class="cell count"><div class="num" id="statCount">0</div><div class="lbl">Buổi live</div></div>
+    <div class="cell hours"><div class="num" id="statHours">0</div><div class="lbl">Giờ live</div></div>
+    <div class="cell money"><div class="num" id="statMoney">0₫</div><div class="lbl">Thu nhập</div></div>
+  </div>
+
+  <div class="monthnav">
+    <button class="iconbtn" id="prevMonth" aria-label="Tháng trước">‹</button>
+    <div class="center filter-center">
+      <select id="filterMonth" class="filter-select"></select>
+      <select id="filterYear" class="filter-select"></select>
+    </div>
+    <button class="iconbtn" id="nextMonth" aria-label="Tháng sau">›</button>
+  </div>
+
+  <div class="toolrow">
+    <div class="tabs">
+      <button id="tabList" class="active">Danh sách</button>
+      <button id="tabCal">Lịch</button>
+    </div>
+    <div class="right-tools">
+      <button class="pillbtn" id="batchBtn">➕ Thêm nhiều</button>
+      <button class="pillbtn" id="ratesBtn">🏷️ Bảng giá</button>
+      <button class="pillbtn" id="syncBtn">☁️ Đồng bộ</button>
+    </div>
+  </div>
+
+  <div id="loadingMsg" class="loading-msg">Đang tải dữ liệu…</div>
+
+  <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm theo tên brand hoặc ngày (VD: 16/07, T5)..." style="display:none;">
+
+  <div id="viewList" class="list" style="margin-top:14px; display:none;"></div>
+
+  <div id="viewCal" class="cal-wrap" style="margin-top:14px; display:none;">
+    <div class="cal-weekdays"><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<button class="fab" id="fabAdd" aria-label="Thêm lịch live">+</button>
+<div class="toast" id="toast"></div>
+
+<!-- Entry add/edit modal (1 lịch) -->
+<div class="overlay" id="entryOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="entryTitle">Thêm lịch live</h2>
+
+    <div class="field">
+      <label for="fBrand">Brand</label>
+      <select id="fBrand"></select>
+    </div>
+    <div class="hint-note" id="noRateHint" style="display:none;">
+      Chưa có brand nào trong bảng giá. Đóng lịch này, bấm <strong>🏷️ Bảng giá</strong> ở trên để thêm brand, rồi quay lại thêm lịch.
+    </div>
+
+    <div class="field">
+      <label>Ngày</label>
+      <div class="date-display-fake" id="fDateOverlay"></div>
+      <input type="hidden" id="fDate">
+    </div>
+
+    <div class="field combo-wrap">
+      <label for="fSlot">Khung giờ</label>
+      <input type="text" id="fSlot" placeholder="Gõ để tìm khung giờ, VD: 20:00–22:00" autocomplete="off">
+      <div class="combo-list" id="comboList"></div>
+      <div class="field-note">Chọn 1 khung có sẵn, hoặc gõ giờ tuỳ ý (VD: 9:00-11:30).</div>
+      <input type="hidden" id="fStart">
+      <input type="hidden" id="fEnd">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="fAmount">Số tiền nhận được (đ)</label>
+        <label class="checkline"><input type="checkbox" id="fOverride"> Sửa tay</label>
+      </div>
+      <input type="number" id="fAmount" min="0" step="1000" inputmode="numeric" disabled>
+      <div class="amount-hint" id="amountHint"></div>
+    </div>
+
+    <div class="form-error" id="entryFormError"></div>
+
+    <div class="sheet-actions">
+      <button class="btn danger" id="btnDelete" style="display:none;">Xoá</button>
+      <button class="btn ghost" id="btnCancel">Huỷ</button>
+      <button class="btn primary" id="btnSave">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Day detail sheet (from calendar) -->
+<div class="overlay" id="dayOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="dayTitle">Ngày —</h2>
+    <div class="daylist" id="dayList"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="dayClose">Đóng</button>
+      <button class="btn primary" id="dayAdd">+ Thêm lịch cho ngày này</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rates list sheet -->
+<div class="overlay" id="ratesOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Bảng giá theo giờ</h2>
+    <div class="daylist" id="ratesList"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="ratesClose">Đóng</button>
+      <button class="btn primary" id="ratesAdd">+ Thêm brand</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rate add/edit modal -->
+<div class="overlay" id="rateEditOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="rateEditTitle">Thêm brand</h2>
+    <div class="field">
+      <label for="rName">Tên brand</label>
+      <input type="text" id="rName" placeholder="VD: Shopee Live, TikTok Shop...">
+    </div>
+    <div class="field">
+      <label for="rRate">Đơn giá / giờ (đ)</label>
+      <input type="number" id="rRate" placeholder="0" min="0" step="1000" inputmode="numeric">
+    </div>
+    <div class="form-error" id="rateFormError"></div>
+    <div class="sheet-actions">
+      <button class="btn danger" id="rateDelete" style="display:none;">Xoá</button>
+      <button class="btn ghost" id="rateCancel">Huỷ</button>
+      <button class="btn primary" id="rateSave">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch add modal (nhiều lịch cùng lúc) -->
+<div class="overlay" id="batchOverlay">
+  <div class="sheet" style="max-width:560px;">
+    <div class="sheet-handle"></div>
+    <h2>Thêm nhiều lịch live</h2>
+    <div class="batch-status" id="batchStatus"></div>
+    <div id="batchRows"></div>
+    <button type="button" class="batch-add-row-btn" id="batchAddRow">+ Thêm dòng</button>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="batchClose">Đóng</button>
+      <button class="btn primary" id="batchSaveAll">Lưu tất cả</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom date picker (tiếng Việt, không phụ thuộc ngôn ngữ máy) -->
+<div class="overlay" id="datePickerOverlay">
+  <div class="sheet" style="max-width:400px;">
+    <div class="sheet-handle"></div>
+    <div class="monthnav" style="margin-bottom:12px;">
+      <button type="button" class="iconbtn" id="dpPrev" aria-label="Tháng trước">‹</button>
+      <div class="center"><div class="dp-label" id="dpLabel">—</div></div>
+      <button type="button" class="iconbtn" id="dpNext" aria-label="Tháng sau">›</button>
+    </div>
+    <div class="cal-weekdays"><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div></div>
+    <div class="cal-grid" id="dpGrid"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="dpCancel">Huỷ</button>
+      <button class="btn primary" id="dpTodayBtn">Hôm nay</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync settings (jsonbin.io) -->
+<div class="overlay" id="syncOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Đồng bộ giữa các máy</h2>
+    <div class="hint-note">
+      Dùng <strong>chung 1 Bin ID + API Key</strong> trên tất cả các máy để chia sẻ cùng dữ liệu.<br><br>
+      <strong>Cách lấy:</strong><br>
+      1. Vào <strong>jsonbin.io</strong> → đăng ký miễn phí<br>
+      2. Mục "API Keys" → copy <strong>X-MASTER-KEY</strong><br>
+      3. Bấm "Create Bin", dán nội dung <code>{"entries":[],"rates":[]}</code>, lưu lại → copy <strong>Bin ID</strong> trên URL<br>
+      4. Dán cả 2 giá trị vào đây, làm y hệt trên máy còn lại
+    </div>
+    <div class="field">
+      <label for="syncBinId">Bin ID</label>
+      <input type="text" id="syncBinId" placeholder="VD: 64f1a2b3c4d5e6f7a8b9c0d1" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="syncApiKey">API Key (X-Master-Key)</label>
+      <input type="text" id="syncApiKey" placeholder="$2a$10$..." autocomplete="off">
+    </div>
+    <div class="form-error" id="syncFormError"></div>
+    <div class="field-note" id="syncStatus">Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.</div>
+    <div class="sheet-actions">
+      <button class="btn danger" id="syncDisable" style="display:none;">Tắt đồng bộ</button>
+      <button class="btn ghost" id="syncClose">Đóng</button>
+      <button class="btn primary" id="syncSave">Lưu & đồng bộ ngay</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const KEY_ENTRIES = 'livestream-entries';
+  const KEY_RATES = 'livestream-rates';
+
+  let entries = [];
+  let rates = [];
+  let viewYear, viewMonth;
+  let viewMode = 'month'; // 'month' | 'all'
+  let currentTab = 'list';
+  let editingEntryId = null;
+  let editingRateId = null;
+  let dayModalDate = null;
+  let batchRows = [];
+
+  const monthNames = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  const weekdayShort = ['CN','T2','T3','T4','T5','T6','T7'];
+
+  // MOCK — danh sách khung giờ tạm để test. Khi có danh sách thật, chỉ cần thay mảng này.
+  const MOCK_TIME_SLOTS = [
+    '08:00–10:00','10:00–12:00','12:00–14:00','14:00–16:00','16:00–18:00',
+    '18:00–20:00','19:00–21:00','20:00–22:00','21:00–23:00','22:00–00:00'
+  ];
+
+  const pad2 = n => String(n).padStart(2,'0');
+  const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const moneyFmt = new Intl.NumberFormat('vi-VN');
+
+  function todayISO(){ return isoDate(new Date()); }
+  function weekdayReadoutText(iso){
+    if(!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    return `${weekdayShort[d.getDay()]}, ${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+  }
+  function weekdayReadoutTextShort(iso){
+    if(!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    return `${weekdayShort[d.getDay()]} ${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`;
+  }
+
+  // ---------- Custom date picker (tiếng Việt cố định, không phụ thuộc ngôn ngữ máy) ----------
+  let dpYear, dpMonth, dpSelectedISO, dpOnSelect;
+  const datePickerOverlay = document.getElementById('datePickerOverlay');
+  function renderDatePicker(){
+    document.getElementById('dpLabel').textContent = `${monthNames[dpMonth]}, ${dpYear}`;
+    const grid = document.getElementById('dpGrid');
+    const firstOfMonth = new Date(dpYear, dpMonth, 1);
+    const offset = (firstOfMonth.getDay() + 6) % 7;
+    const start = new Date(dpYear, dpMonth, 1 - offset);
+    const today = todayISO();
+    let html = '';
+    for(let i = 0; i < 42; i++){
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const iso = isoDate(d);
+      const inMonth = d.getMonth() === dpMonth;
+      const classes = ['cal-cell'];
+      if(!inMonth) classes.push('outside');
+      if(iso === today) classes.push('today');
+      if(iso === dpSelectedISO) classes.push('dp-selected');
+      html += `<div class="${classes.join(' ')}" data-date="${iso}"><div class="dnum">${d.getDate()}</div></div>`;
+    }
+    grid.innerHTML = html;
+    grid.querySelectorAll('.cal-cell').forEach(el => {
+      el.addEventListener('click', () => {
+        const iso = el.dataset.date;
+        dpSelectedISO = iso;
+        if(dpOnSelect) dpOnSelect(iso);
+        datePickerOverlay.classList.remove('show');
+      });
+    });
+  }
+  function openDatePicker(initialISO, onSelect){
+    const base = initialISO ? new Date(initialISO + 'T00:00:00') : new Date();
+    dpYear = base.getFullYear(); dpMonth = base.getMonth(); dpSelectedISO = initialISO || '';
+    dpOnSelect = onSelect;
+    renderDatePicker();
+    datePickerOverlay.classList.add('show');
+  }
+  document.getElementById('dpPrev').addEventListener('click', () => { dpMonth--; if(dpMonth < 0){ dpMonth = 11; dpYear--; } renderDatePicker(); });
+  document.getElementById('dpNext').addEventListener('click', () => { dpMonth++; if(dpMonth > 11){ dpMonth = 0; dpYear++; } renderDatePicker(); });
+  document.getElementById('dpCancel').addEventListener('click', () => datePickerOverlay.classList.remove('show'));
+  document.getElementById('dpTodayBtn').addEventListener('click', () => {
+    const iso = todayISO();
+    dpSelectedISO = iso;
+    if(dpOnSelect) dpOnSelect(iso);
+    datePickerOverlay.classList.remove('show');
+  });
+  datePickerOverlay.addEventListener('click', (ev) => { if(ev.target === datePickerOverlay) datePickerOverlay.classList.remove('show'); });
+
+  function minutesOf(hhmm){ if(!hhmm) return 0; const [h,m] = hhmm.split(':').map(Number); return h*60 + m; }
+  function durationHours(start, end){
+    if(!start || !end) return 0;
+    let diff = minutesOf(end) - minutesOf(start);
+    if(diff <= 0) diff += 24*60;
+    return diff/60;
+  }
+  function doOverlap(s1, e1, s2, e2){
+    // Coi 2 khung giờ là "trùng" nếu chồng lấn HOẶC chạm sát nhau (không có khoảng nghỉ giữa 2 lịch)
+    let a1 = minutesOf(s1), a2 = minutesOf(e1); if(a2 <= a1) a2 += 1440;
+    let b1 = minutesOf(s2), b2 = minutesOf(e2); if(b2 <= b1) b2 += 1440;
+    return a1 <= b2 && b1 <= a2;
+  }
+  function findConflicts(date, start, end, excludeId){
+    if(!date || !start || !end) return [];
+    return entries.filter(e => {
+      if(e.date !== date) return false;
+      if(excludeId && e.id === excludeId) return false;
+      return doOverlap(start, end, e.startTime, e.endTime);
+    });
+  }
+  function escapeHtml(str){ const div = document.createElement('div'); div.textContent = str == null ? '' : str; return div.innerHTML; }
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Storage ----------
+  function loadAll(){
+    try{ entries = JSON.parse(localStorage.getItem(KEY_ENTRIES) || '[]'); } catch(e){ entries = []; }
+    try{ rates = JSON.parse(localStorage.getItem(KEY_RATES) || '[]'); } catch(e){ rates = []; }
+  }
+  function saveEntries(){
+    try{ localStorage.setItem(KEY_ENTRIES, JSON.stringify(entries)); }
+    catch(e){ console.error('Lỗi lưu lịch', e); }
+    scheduleCloudPush();
+  }
+  function saveRates(){
+    try{ localStorage.setItem(KEY_RATES, JSON.stringify(rates)); }
+    catch(e){ console.error('Lỗi lưu bảng giá', e); }
+    scheduleCloudPush();
+  }
+
+  // ---------- Cloud sync (jsonbin.io) — đồng bộ giữa các máy, không real-time ----------
+  const SYNC_CONFIG_KEY = 'livestream-sync-config';
+  let syncConfig = null;
+  let syncPushTimer = null;
+
+  function loadSyncConfig(){
+    try{ const raw = localStorage.getItem(SYNC_CONFIG_KEY); syncConfig = raw ? JSON.parse(raw) : null; }
+    catch(e){ syncConfig = null; }
+  }
+  function saveSyncConfigLocal(cfg){
+    syncConfig = cfg;
+    try{ localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg)); } catch(e){}
+  }
+  function clearSyncConfig(){
+    syncConfig = null;
+    try{ localStorage.removeItem(SYNC_CONFIG_KEY); } catch(e){}
+  }
+  function nowTimeStr(){ const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+
+  async function cloudPull(){
+    if(!syncConfig) return null;
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}/latest`, {
+      headers: { 'X-Master-Key': syncConfig.apiKey }
+    });
+    if(!res.ok) throw new Error('Không tải được dữ liệu — kiểm tra lại Bin ID / API Key.');
+    const data = await res.json();
+    return data.record || {};
+  }
+  async function cloudPush(){
+    if(!syncConfig) return;
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${syncConfig.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': syncConfig.apiKey },
+      body: JSON.stringify({ entries, rates })
+    });
+    if(!res.ok) throw new Error('Không đẩy được dữ liệu lên cloud.');
+  }
+  function scheduleCloudPush(){
+    if(!syncConfig) return;
+    if(syncPushTimer) clearTimeout(syncPushTimer);
+    syncPushTimer = setTimeout(async () => {
+      try{ await cloudPush(); setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr()); }
+      catch(e){ setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message); }
+    }, 900);
+  }
+  function setSyncStatusText(msg){
+    const el = document.getElementById('syncStatus');
+    if(el) el.textContent = msg;
+  }
+
+  async function attemptInitialSync(){
+    if(!syncConfig) return;
+    setSyncStatusText('Đang đồng bộ...');
+    try{
+      const remote = await cloudPull();
+      const remoteEntries = Array.isArray(remote.entries) ? remote.entries : [];
+      const remoteRates = Array.isArray(remote.rates) ? remote.rates : [];
+      if(remoteEntries.length === 0 && remoteRates.length === 0 && (entries.length > 0 || rates.length > 0)){
+        // Bin đang trống, máy này đã có dữ liệu sẵn -> đẩy lên để seed cho các máy khác
+        await cloudPush();
+      }else{
+        entries = remoteEntries; rates = remoteRates;
+        saveEntries(); saveRates();
+        renderAll();
+      }
+      setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
+    }catch(e){
+      setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message);
+    }
+  }
+
+  function openSyncModal(){
+    const errEl = document.getElementById('syncFormError');
+    errEl.style.display = 'none'; errEl.textContent = '';
+    const disableBtn = document.getElementById('syncDisable');
+    if(syncConfig){
+      document.getElementById('syncBinId').value = syncConfig.binId;
+      document.getElementById('syncApiKey').value = syncConfig.apiKey;
+      disableBtn.style.display = 'inline-block';
+      setSyncStatusText('Đã bật đồng bộ.');
+    }else{
+      document.getElementById('syncBinId').value = '';
+      document.getElementById('syncApiKey').value = '';
+      disableBtn.style.display = 'none';
+      setSyncStatusText('Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.');
+    }
+    document.getElementById('syncOverlay').classList.add('show');
+  }
+  document.getElementById('syncBtn').addEventListener('click', openSyncModal);
+  document.getElementById('syncClose').addEventListener('click', () => document.getElementById('syncOverlay').classList.remove('show'));
+  document.getElementById('syncOverlay').addEventListener('click', (ev) => {
+    if(ev.target === document.getElementById('syncOverlay')) document.getElementById('syncOverlay').classList.remove('show');
+  });
+
+  document.getElementById('syncSave').addEventListener('click', async () => {
+    const binId = document.getElementById('syncBinId').value.trim();
+    const apiKey = document.getElementById('syncApiKey').value.trim();
+    const errEl = document.getElementById('syncFormError');
+    errEl.style.display = 'none'; errEl.textContent = '';
+    if(!binId || !apiKey){
+      errEl.textContent = 'Vui lòng nhập đầy đủ Bin ID và API Key.';
+      errEl.style.display = 'block';
+      return;
+    }
+    saveSyncConfigLocal({ binId, apiKey });
+    setSyncStatusText('Đang kết nối...');
+    try{
+      const remote = await cloudPull();
+      const remoteEntries = Array.isArray(remote.entries) ? remote.entries : [];
+      const remoteRates = Array.isArray(remote.rates) ? remote.rates : [];
+      if(remoteEntries.length === 0 && remoteRates.length === 0){
+        await cloudPush();
+        showToast('Đã kết nối và đẩy dữ liệu hiện tại lên cloud.');
+      }else{
+        entries = remoteEntries; rates = remoteRates;
+        saveEntries(); saveRates();
+        renderAll();
+        showToast('Đã kết nối và tải dữ liệu chung từ cloud.');
+      }
+      setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
+      document.getElementById('syncDisable').style.display = 'inline-block';
+    }catch(e){
+      errEl.textContent = e.message || 'Không kết nối được. Kiểm tra lại Bin ID / API Key.';
+      errEl.style.display = 'block';
+      setSyncStatusText('⚠️ Chưa đồng bộ được.');
+    }
+  });
+
+  document.getElementById('syncDisable').addEventListener('click', () => {
+    clearSyncConfig();
+    document.getElementById('syncBinId').value = '';
+    document.getElementById('syncApiKey').value = '';
+    document.getElementById('syncDisable').style.display = 'none';
+    setSyncStatusText('Chưa bật đồng bộ — dữ liệu chỉ lưu trên máy này.');
+    showToast('Đã tắt đồng bộ.');
+  });
+
+  // ---------- Derived data ----------
+  function entriesForMonth(y, m){ const prefix = `${y}-${pad2(m+1)}`; return entries.filter(e => e.date && e.date.startsWith(prefix)); }
+  function entriesForDate(iso){ return entries.filter(e => e.date === iso); }
+  function sortedByDateTime(list){
+    return [...list].sort((a,b) => { if(a.date !== b.date) return a.date < b.date ? -1 : 1; return minutesOf(a.startTime) - minutesOf(b.startTime); });
+  }
+  function sortedByCreatedDesc(list){
+    return [...list].sort((a,b) => {
+      const ca = a.createdAt || 0, cb = b.createdAt || 0;
+      if(cb !== ca) return cb - ca;
+      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return minutesOf(a.startTime) - minutesOf(b.startTime);
+    });
+  }
+  function rateById(id){ return rates.find(r => r.id === id); }
+  function buildRateOptionsHTML(selectedId, placeholder){
+    const sorted = [...rates].sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+    let html = `<option value="" disabled ${!selectedId ? 'selected' : ''}>${placeholder || '— Chọn brand —'}</option>`;
+    html += sorted.map(r => `<option value="${r.id}">${escapeHtml(r.name)} (${moneyFmt.format(r.rate)}đ/giờ)</option>`).join('');
+    return html;
+  }
+
+  // ---------- Slot combobox (dùng chung cho form 1 lịch & batch) ----------
+  function parseSlotText(text){
+    if(!text) return null;
+    const matches = text.match(/\d{1,2}:\d{2}/g);
+    if(!matches || matches.length < 2) return null;
+    const norm = t => { const [h,m] = t.split(':'); return pad2(Number(h)) + ':' + pad2(Number(m)); };
+    return { start: norm(matches[0]), end: norm(matches[1]) };
+  }
+  function filterSlots(query){
+    const q = query.trim().toLowerCase();
+    if(!q) return MOCK_TIME_SLOTS;
+    return MOCK_TIME_SLOTS.filter(s => s.toLowerCase().replace('–','-').includes(q.replace('–','-')));
+  }
+  function wireSlotCombo(slotInput, listEl, onParsed){
+    function refresh(){
+      const list = filterSlots(slotInput.value);
+      if(list.length === 0){
+        listEl.innerHTML = `<div class="combo-empty">Không có khung khớp — gõ tiếp để nhập giờ tuỳ ý.</div>`;
+      }else{
+        listEl.innerHTML = list.map(s => `<div class="combo-item" data-val="${s}">${s}</div>`).join('');
+        listEl.querySelectorAll('.combo-item').forEach(el => {
+          el.addEventListener('mousedown', ev => {
+            ev.preventDefault();
+            slotInput.value = el.dataset.val;
+            listEl.style.display = 'none';
+            const parsed = parseSlotText(el.dataset.val);
+            if(parsed) onParsed(parsed.start, parsed.end);
+          });
+        });
+      }
+      listEl.style.display = 'block';
+    }
+    slotInput.addEventListener('input', () => {
+      refresh();
+      const parsed = parseSlotText(slotInput.value);
+      if(parsed) onParsed(parsed.start, parsed.end);
+    });
+    slotInput.addEventListener('focus', refresh);
+    slotInput.addEventListener('blur', () => {
+      const parsed = parseSlotText(slotInput.value);
+      if(parsed) onParsed(parsed.start, parsed.end);
+      setTimeout(() => { listEl.style.display = 'none'; }, 120);
+    });
+  }
+
+  // ---------- Rendering: stats / month ----------
+  function currentEntryList(){
+    return viewMode === 'all' ? entries : entriesForMonth(viewYear, viewMonth);
+  }
+
+  function renderStats(){
+    const list = currentEntryList();
+    const count = list.length;
+    const hours = list.reduce((s,e) => s + durationHours(e.startTime, e.endTime), 0);
+    const money = list.reduce((s,e) => s + (Number(e.amount) || 0), 0);
+    document.getElementById('statCount').textContent = count;
+    document.getElementById('statHours').textContent = (Math.round(hours*10)/10).toString();
+    document.getElementById('statMoney').textContent = moneyFmt.format(money) + '₫';
+  }
+
+  function populateYearSelect(){
+    const yearSelect = document.getElementById('filterYear');
+    const prevSelected = yearSelect.value ? Number(yearSelect.value) : viewYear;
+    const yearsSet = new Set(entries.map(e => Number(e.date.slice(0,4))));
+    yearsSet.add(new Date().getFullYear());
+    yearsSet.add(viewYear);
+    const years = [...yearsSet].sort((a,b) => a - b);
+    yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    yearSelect.value = years.includes(prevSelected) ? prevSelected : viewYear;
+  }
+  function populateMonthSelectOnce(){
+    const monthSelect = document.getElementById('filterMonth');
+    if(monthSelect.dataset.built) return;
+    let html = `<option value="all">Tất cả các tháng</option>`;
+    html += monthNames.map((n,i) => `<option value="${i}">${n}</option>`).join('');
+    monthSelect.innerHTML = html;
+    monthSelect.dataset.built = '1';
+  }
+  function syncFilterSelects(){
+    populateMonthSelectOnce();
+    populateYearSelect();
+    const monthSelect = document.getElementById('filterMonth');
+    const yearSelect = document.getElementById('filterYear');
+    monthSelect.value = viewMode === 'all' ? 'all' : String(viewMonth);
+    yearSelect.disabled = viewMode === 'all';
+    yearSelect.value = String(viewYear);
+  }
+
+  let searchQuery = '';
+  function renderList(){
+    const wrap = document.getElementById('viewList');
+    let base = currentEntryList();
+    if(searchQuery.trim()){
+      const q = searchQuery.trim().toLowerCase();
+      base = base.filter(e => {
+        const haystack = `${e.brandName || ''} ${weekdayReadoutText(e.date)} ${e.date || ''}`.toLowerCase();
+        return haystack.includes(q);
+      });
+    }
+    const list = sortedByCreatedDesc(base);
+    if(list.length === 0){
+      const scopeTxt = searchQuery.trim()
+        ? `không tìm thấy lịch nào khớp với "${searchQuery.trim()}"`
+        : (viewMode === 'all' ? 'chưa có lịch live nào' : `chưa có lịch live cho tháng ${viewMonth+1}/${viewYear}`);
+      wrap.innerHTML = `<div class="empty"><div class="big">Chưa có lịch live</div><div class="small">${searchQuery.trim() ? '' : 'Nhấn nút + để thêm — '}hiện ${scopeTxt}</div></div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(e => {
+      const d = new Date(e.date + 'T00:00:00');
+      const wd = weekdayShort[d.getDay()];
+      return `<div class="entry-card" data-id="${e.id}">
+        <div class="datebox"><div class="dd">${pad2(d.getDate())}/${pad2(d.getMonth()+1)}</div><div class="wd">${wd}</div></div>
+        <div class="divider"></div>
+        <div class="info">
+          <div class="name">${escapeHtml(e.brandName || 'Chưa rõ brand')}</div>
+          <div class="time">${e.startTime || '--:--'} – ${e.endTime || '--:--'}</div>
+        </div>
+        <div class="amount">${moneyFmt.format(Number(e.amount)||0)}₫${e.isOverride ? '<span class="ov">sửa tay</span>' : ''}</div>
+      </div>`;
+    }).join('');
+    wrap.querySelectorAll('.entry-card').forEach(el => el.addEventListener('click', () => openEntryModal(el.dataset.id)));
+  }
+
+  function renderCalendar(){
+    const grid = document.getElementById('calGrid');
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const offset = (firstOfMonth.getDay() + 6) % 7;
+    const start = new Date(viewYear, viewMonth, 1 - offset);
+    const today = todayISO();
+    let html = '';
+    for(let i=0; i<42; i++){
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const iso = isoDate(d);
+      const inMonth = d.getMonth() === viewMonth;
+      const dayEntries = inMonth ? entriesForDate(iso) : [];
+      const classes = ['cal-cell'];
+      if(!inMonth) classes.push('outside');
+      if(iso === today) classes.push('today');
+      let dots = '';
+      if(dayEntries.length > 0){ dots = `<div class="dots">${'<span></span>'.repeat(Math.min(dayEntries.length,4))}</div>`; }
+      const badge = dayEntries.length > 1 ? `<div class="count-badge">${dayEntries.length}</div>` : '';
+      html += `<div class="${classes.join(' ')}" data-date="${iso}" data-inmonth="${inMonth ? '1':'0'}"><div class="dnum">${d.getDate()}</div>${badge}${dots}</div>`;
+    }
+    grid.innerHTML = html;
+    grid.querySelectorAll('.cal-cell').forEach(el => { if(el.dataset.inmonth === '1') el.addEventListener('click', () => openDayModal(el.dataset.date)); });
+  }
+
+  function fillNoticeList(elId, iso){
+    const list = sortedByDateTime(entriesForDate(iso));
+    const el = document.getElementById(elId);
+    if(list.length === 0){ el.innerHTML = `<div class="notice-empty">Không có lịch live.</div>`; return; }
+    el.innerHTML = list.map(e => `
+      <div class="notice-item">
+        <span class="notice-time">${e.startTime}–${e.endTime}</span>
+        <span class="notice-name">${escapeHtml(e.brandName || 'Chưa rõ brand')}</span>
+      </div>`).join('');
+  }
+  function renderNoticeBoard(){
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    document.getElementById('noticeTodayDate').textContent = `${pad2(today.getDate())}/${pad2(today.getMonth()+1)}`;
+    document.getElementById('noticeTomorrowDate').textContent = `${pad2(tomorrow.getDate())}/${pad2(tomorrow.getMonth()+1)}`;
+    fillNoticeList('noticeTodayList', isoDate(today));
+    fillNoticeList('noticeTomorrowList', isoDate(tomorrow));
+  }
+
+  function applyTabVisibility(tab){
+    document.getElementById('tabList').classList.toggle('active', tab==='list');
+    document.getElementById('tabCal').classList.toggle('active', tab==='cal');
+    document.getElementById('viewList').style.display = tab==='list' ? 'flex' : 'none';
+    document.getElementById('viewCal').style.display = tab==='cal' ? 'block' : 'none';
+    document.getElementById('searchInput').style.display = tab==='list' ? 'block' : 'none';
+  }
+
+  function renderAll(){
+    syncFilterSelects();
+    document.getElementById('tabCal').classList.toggle('tab-disabled', viewMode === 'all');
+    if(viewMode === 'all' && currentTab === 'cal'){ currentTab = 'list'; }
+    renderNoticeBoard();
+    renderStats();
+    if(currentTab === 'list') renderList(); else renderCalendar();
+    applyTabVisibility(currentTab);
+  }
+
+  function setTab(tab){
+    if(tab === 'cal' && viewMode === 'all') return; // không xem dạng lịch khi đang lọc "Tất cả"
+    currentTab = tab;
+    applyTabVisibility(tab);
+    if(tab==='list') renderList(); else renderCalendar();
+  }
+
+  // ================= ENTRY MODAL (1 lịch) =================
+  const entryOverlay = document.getElementById('entryOverlay');
+  const fBrand = document.getElementById('fBrand');
+  const fDate = document.getElementById('fDate');
+  const fDateReadout = document.getElementById('fDateOverlay');
+  function refreshFDateReadout(){ fDateReadout.textContent = weekdayReadoutText(fDate.value); }
+  fDateReadout.addEventListener('click', () => {
+    openDatePicker(fDate.value, (iso) => { fDate.value = iso; refreshFDateReadout(); });
+  });
+  const fSlot = document.getElementById('fSlot');
+  const comboList = document.getElementById('comboList');
+  const fStart = document.getElementById('fStart');
+  const fEnd = document.getElementById('fEnd');
+  const fAmount = document.getElementById('fAmount');
+  const fOverride = document.getElementById('fOverride');
+  const amountHint = document.getElementById('amountHint');
+  const noRateHint = document.getElementById('noRateHint');
+
+  wireSlotCombo(fSlot, comboList, (start, end) => { fStart.value = start; fEnd.value = end; computeAndSetAmount(); });
+
+  function populateBrandSelect(selectedId, deletedSnapshotName){
+    fBrand.innerHTML = buildRateOptionsHTML(selectedId);
+    if(selectedId && !rateById(selectedId) && deletedSnapshotName){
+      fBrand.innerHTML += `<option value="${selectedId}" selected>${escapeHtml(deletedSnapshotName)} (brand đã xoá)</option>`;
+    }
+    if(selectedId) fBrand.value = selectedId;
+    noRateHint.style.display = rates.length === 0 ? 'block' : 'none';
+  }
+
+  function computeAndSetAmount(){
+    const r = rateById(fBrand.value);
+    const hours = durationHours(fStart.value, fEnd.value);
+    if(!r){
+      if(!fOverride.checked){ fAmount.value = ''; }
+      amountHint.textContent = 'Chọn brand để tự động tính số tiền theo giờ.';
+      return;
+    }
+    const computed = Math.round(r.rate * hours);
+    if(!fOverride.checked){ fAmount.value = computed; }
+    const hoursTxt = (Math.round(hours*10)/10).toString();
+    amountHint.textContent = `Đơn giá ${moneyFmt.format(r.rate)}đ/giờ × ${hoursTxt} giờ ≈ ${moneyFmt.format(computed)}đ`;
+  }
+
+  fBrand.addEventListener('change', computeAndSetAmount);
+  fOverride.addEventListener('change', () => {
+    fAmount.disabled = !fOverride.checked;
+    if(!fOverride.checked) computeAndSetAmount(); else fAmount.focus();
+  });
+
+  const entryFormError = document.getElementById('entryFormError');
+  const btnDeleteEl = document.getElementById('btnDelete');
+  let deleteArmed = false;
+  let deleteArmedTimer = null;
+
+  function showEntryError(msg){ entryFormError.textContent = msg; entryFormError.style.display = 'block'; }
+  function clearEntryError(){ entryFormError.textContent = ''; entryFormError.style.display = 'none'; }
+  function disarmDelete(){
+    deleteArmed = false;
+    btnDeleteEl.textContent = 'Xoá';
+    btnDeleteEl.classList.remove('confirm-armed');
+    if(deleteArmedTimer){ clearTimeout(deleteArmedTimer); deleteArmedTimer = null; }
+  }
+
+  function openEntryModal(id, prefillDate){
+    editingEntryId = id || null;
+    const title = document.getElementById('entryTitle');
+    clearEntryError();
+    disarmDelete();
+
+    if(id){
+      const e = entries.find(x => x.id === id);
+      title.textContent = 'Sửa lịch live';
+      btnDeleteEl.style.display = 'inline-block';
+      populateBrandSelect(e.rateId, e.brandName);
+      fDate.value = e.date || '';
+      fStart.value = e.startTime || '';
+      fEnd.value = e.endTime || '';
+      fSlot.value = (e.startTime && e.endTime) ? `${e.startTime}–${e.endTime}` : '';
+      fOverride.checked = !!e.isOverride;
+      fAmount.disabled = !e.isOverride;
+      fAmount.value = e.amount != null ? e.amount : '';
+      computeAndSetAmount();
+      if(e.isOverride){
+        const r = rateById(e.rateId);
+        amountHint.textContent = r ? `Đang sửa tay — giá bảng: ${moneyFmt.format(r.rate)}đ/giờ.` : `Đang sửa tay — brand này không còn trong bảng giá.`;
+      }
+    }else{
+      title.textContent = 'Thêm lịch live';
+      btnDeleteEl.style.display = 'none';
+      populateBrandSelect(null);
+      fDate.value = prefillDate || (viewMode === 'all' ? todayISO() : isoDate(new Date(viewYear, viewMonth, Math.min(new Date().getDate(), 28))));
+      fStart.value = ''; fEnd.value = ''; fSlot.value = '';
+      fOverride.checked = false;
+      fAmount.disabled = true; fAmount.value = '';
+      computeAndSetAmount();
+    }
+    refreshFDateReadout();
+    entryOverlay.classList.add('show');
+  }
+  function closeEntryModal(){ entryOverlay.classList.remove('show'); editingEntryId = null; disarmDelete(); }
+  document.getElementById('btnCancel').addEventListener('click', closeEntryModal);
+  entryOverlay.addEventListener('click', (ev) => { if(ev.target === entryOverlay) closeEntryModal(); });
+
+  document.getElementById('btnSave').addEventListener('click', () => {
+    clearEntryError();
+    const rateId = fBrand.value;
+    const r = rateById(rateId);
+    const date = fDate.value;
+    const startTime = fStart.value;
+    const endTime = fEnd.value;
+    const amount = Number(fAmount.value) || 0;
+    const isOverride = fOverride.checked;
+
+    if(!rateId){ showEntryError('Vui lòng chọn brand (nếu chưa có, thêm ở Bảng giá trước).'); return; }
+    if(!date){ showEntryError('Vui lòng chọn ngày live.'); return; }
+    if(!startTime || !endTime){ showEntryError('Vui lòng chọn hoặc nhập khung giờ hợp lệ (VD: 20:00–22:00).'); return; }
+
+    const conflicts = findConflicts(date, startTime, endTime, editingEntryId);
+    if(conflicts.length > 0){
+      const c = conflicts[0];
+      showEntryError(`Trùng/sát giờ với "${c.brandName}" (${c.startTime}–${c.endTime}) cùng ngày. Cần có khoảng nghỉ giữa 2 lịch.`);
+      return;
+    }
+
+    const brandName = r ? r.name : (entries.find(x => x.id === editingEntryId)?.brandName || 'Không rõ');
+
+    if(editingEntryId){
+      const e = entries.find(x => x.id === editingEntryId);
+      Object.assign(e, { rateId, brandName, date, startTime, endTime, amount, isOverride });
+    }else{
+      entries.push({ id: uid(), rateId, brandName, date, startTime, endTime, amount, isOverride, createdAt: Date.now() });
+    }
+    saveEntries();
+    showToast(editingEntryId ? 'Đã cập nhật lịch.' : 'Đã lưu lịch.');
+
+    const d = new Date(date + 'T00:00:00');
+    viewYear = d.getFullYear(); viewMonth = d.getMonth();
+
+    closeEntryModal();
+    renderAll();
+  });
+
+  btnDeleteEl.addEventListener('click', () => {
+    if(!editingEntryId) return;
+    if(!deleteArmed){
+      deleteArmed = true;
+      btnDeleteEl.textContent = 'Bấm lần nữa để xoá';
+      btnDeleteEl.classList.add('confirm-armed');
+      deleteArmedTimer = setTimeout(disarmDelete, 4000);
+      return;
+    }
+    entries = entries.filter(x => x.id !== editingEntryId);
+    saveEntries();
+    showToast('Đã xoá lịch.');
+    closeEntryModal();
+    renderAll();
+    if(document.getElementById('dayOverlay').classList.contains('show') && dayModalDate) renderDayList(dayModalDate);
+  });
+
+  // ================= DAY MODAL =================
+  const dayModalOverlay = document.getElementById('dayOverlay');
+  function openDayModal(iso){
+    dayModalDate = iso;
+    const d = new Date(iso + 'T00:00:00');
+    document.getElementById('dayTitle').textContent = `${weekdayShort[d.getDay()]}, ${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+    renderDayList(iso);
+    dayModalOverlay.classList.add('show');
+  }
+  function renderDayList(iso){
+    const list = sortedByDateTime(entriesForDate(iso));
+    const wrap = document.getElementById('dayList');
+    if(list.length === 0){ wrap.innerHTML = `<div class="none">Chưa có lịch live nào trong ngày này.</div>`; return; }
+    wrap.innerHTML = list.map(e => `
+      <div class="di" data-id="${e.id}">
+        <div><div class="n">${escapeHtml(e.brandName || 'Chưa rõ brand')}</div><div class="t">${e.startTime || '--:--'} – ${e.endTime || '--:--'}</div></div>
+        <div class="a">${moneyFmt.format(Number(e.amount)||0)}₫${e.isOverride ? '<span style="display:block;font-size:9px;color:var(--muted-2);text-transform:uppercase;">sửa tay</span>' : ''}</div>
+      </div>`).join('');
+    wrap.querySelectorAll('.di').forEach(el => el.addEventListener('click', () => { dayModalOverlay.classList.remove('show'); openEntryModal(el.dataset.id); }));
+  }
+  document.getElementById('dayClose').addEventListener('click', () => dayModalOverlay.classList.remove('show'));
+  dayModalOverlay.addEventListener('click', (ev) => { if(ev.target === dayModalOverlay) dayModalOverlay.classList.remove('show'); });
+  document.getElementById('dayAdd').addEventListener('click', () => { dayModalOverlay.classList.remove('show'); openEntryModal(null, dayModalDate); });
+
+  // ================= RATES LIST MODAL =================
+  const ratesOverlay = document.getElementById('ratesOverlay');
+  function openRatesModal(){ renderRatesList(); ratesOverlay.classList.add('show'); }
+  function renderRatesList(){
+    const wrap = document.getElementById('ratesList');
+    if(rates.length === 0){ wrap.innerHTML = `<div class="none">Chưa có brand nào. Bấm "+ Thêm brand" để bắt đầu.</div>`; return; }
+    const sorted = [...rates].sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+    wrap.innerHTML = sorted.map(r => `
+      <div class="di" data-id="${r.id}">
+        <div class="n">${escapeHtml(r.name)}</div>
+        <div class="a">${moneyFmt.format(r.rate)}đ<span style="display:block;font-size:9px;color:var(--muted-2);text-transform:uppercase;">/ giờ</span></div>
+      </div>`).join('');
+    wrap.querySelectorAll('.di').forEach(el => el.addEventListener('click', () => openRateEditModal(el.dataset.id)));
+  }
+  document.getElementById('ratesBtn').addEventListener('click', openRatesModal);
+  document.getElementById('ratesClose').addEventListener('click', () => ratesOverlay.classList.remove('show'));
+  ratesOverlay.addEventListener('click', (ev) => { if(ev.target === ratesOverlay) ratesOverlay.classList.remove('show'); });
+  document.getElementById('ratesAdd').addEventListener('click', () => openRateEditModal(null));
+
+  // ================= RATE EDIT MODAL =================
+  const rateEditOverlay = document.getElementById('rateEditOverlay');
+  const rName = document.getElementById('rName');
+  const rRate = document.getElementById('rRate');
+  const rateFormError = document.getElementById('rateFormError');
+  const rateDeleteEl = document.getElementById('rateDelete');
+  let rateDeleteArmed = false;
+  let rateDeleteArmedTimer = null;
+
+  function showRateError(msg){ rateFormError.textContent = msg; rateFormError.style.display = 'block'; }
+  function clearRateError(){ rateFormError.textContent = ''; rateFormError.style.display = 'none'; }
+  function disarmRateDelete(){
+    rateDeleteArmed = false;
+    rateDeleteEl.textContent = 'Xoá';
+    rateDeleteEl.classList.remove('confirm-armed');
+    if(rateDeleteArmedTimer){ clearTimeout(rateDeleteArmedTimer); rateDeleteArmedTimer = null; }
+  }
+
+  function openRateEditModal(id){
+    editingRateId = id || null;
+    const title = document.getElementById('rateEditTitle');
+    clearRateError();
+    disarmRateDelete();
+    if(id){ const r = rateById(id); title.textContent = 'Sửa brand'; rateDeleteEl.style.display = 'inline-block'; rName.value = r.name; rRate.value = r.rate; }
+    else{ title.textContent = 'Thêm brand'; rateDeleteEl.style.display = 'none'; rName.value = ''; rRate.value = ''; }
+    rateEditOverlay.classList.add('show');
+  }
+  function closeRateEditModal(){ rateEditOverlay.classList.remove('show'); editingRateId = null; disarmRateDelete(); }
+  document.getElementById('rateCancel').addEventListener('click', closeRateEditModal);
+  rateEditOverlay.addEventListener('click', (ev) => { if(ev.target === rateEditOverlay) closeRateEditModal(); });
+  document.getElementById('rateSave').addEventListener('click', () => {
+    clearRateError();
+    const name = rName.value.trim();
+    const rate = Number(rRate.value) || 0;
+    if(!name){ showRateError('Vui lòng nhập tên brand.'); return; }
+    if(editingRateId){ Object.assign(rateById(editingRateId), { name, rate }); }
+    else{ rates.push({ id: uid(), name, rate }); }
+    saveRates();
+    showToast('Đã lưu brand.');
+    closeRateEditModal();
+    renderRatesList();
+  });
+  rateDeleteEl.addEventListener('click', () => {
+    if(!editingRateId) return;
+    if(!rateDeleteArmed){
+      rateDeleteArmed = true;
+      rateDeleteEl.textContent = 'Bấm lần nữa để xoá';
+      rateDeleteEl.classList.add('confirm-armed');
+      rateDeleteArmedTimer = setTimeout(disarmRateDelete, 4000);
+      return;
+    }
+    rates = rates.filter(x => x.id !== editingRateId);
+    saveRates();
+    showToast('Đã xoá brand.');
+    closeRateEditModal();
+    renderRatesList();
+  });
+
+  // ================= BATCH ADD (nhiều lịch cùng lúc) =================
+  const batchOverlay = document.getElementById('batchOverlay');
+  const batchRowsWrap = document.getElementById('batchRows');
+  const batchStatus = document.getElementById('batchStatus');
+
+  function createBatchRow(){
+    const rowEl = document.createElement('div');
+    rowEl.className = 'batch-row';
+    rowEl.innerHTML = `
+      <div class="row-top">
+        <select class="b-rate"></select>
+        <div class="date-display-fake b-date-overlay"></div>
+        <input type="hidden" class="b-date">
+        <button type="button" class="row-del" aria-label="Xoá dòng">×</button>
+      </div>
+      <div class="row-mid combo-wrap">
+        <input type="text" class="b-slot" placeholder="Khung giờ, VD: 20:00–22:00" autocomplete="off">
+        <div class="combo-list b-combo"></div>
+      </div>
+      <div class="row-bottom">
+        <input type="number" class="b-amount" placeholder="Số tiền (đ)" min="0" step="1000" inputmode="numeric">
+      </div>
+      <div class="row-warn"></div>`;
+    batchRowsWrap.appendChild(rowEl);
+
+    const rateSelect = rowEl.querySelector('.b-rate');
+    const dateInput = rowEl.querySelector('.b-date');
+    const dateReadoutEl = rowEl.querySelector('.b-date-overlay');
+    const slotInput = rowEl.querySelector('.b-slot');
+    const comboEl = rowEl.querySelector('.b-combo');
+    const amountInput = rowEl.querySelector('.b-amount');
+    const warnEl = rowEl.querySelector('.row-warn');
+    const delBtn = rowEl.querySelector('.row-del');
+
+    rateSelect.innerHTML = buildRateOptionsHTML(null, '— Brand —');
+    dateInput.value = viewMode === 'all' ? todayISO() : isoDate(new Date(viewYear, viewMonth, Math.min(new Date().getDate(), 28)));
+    dateReadoutEl.textContent = weekdayReadoutTextShort(dateInput.value);
+    dateReadoutEl.addEventListener('click', () => {
+      openDatePicker(dateInput.value, (iso) => { dateInput.value = iso; dateReadoutEl.textContent = weekdayReadoutTextShort(iso); });
+    });
+
+    const rowObj = { rowEl, rateSelect, dateInput, slotInput, amountInput, warnEl, startTime: '', endTime: '' };
+
+    function recompute(){
+      const r = rateById(rateSelect.value);
+      const hours = durationHours(rowObj.startTime, rowObj.endTime);
+      if(r && hours > 0){ amountInput.value = Math.round(r.rate * hours); }
+    }
+    wireSlotCombo(slotInput, comboEl, (start, end) => { rowObj.startTime = start; rowObj.endTime = end; recompute(); });
+    rateSelect.addEventListener('change', recompute);
+    delBtn.addEventListener('click', () => { rowEl.remove(); batchRows = batchRows.filter(r => r !== rowObj); });
+
+    batchRows.push(rowObj);
+    return rowObj;
+  }
+
+  function openBatchModal(){
+    batchRowsWrap.innerHTML = '';
+    batchRows = [];
+    batchStatus.textContent = rates.length === 0 ? 'Chưa có brand nào — thêm ở Bảng giá trước khi thêm lịch.' : '';
+    for(let i=0; i<3; i++) createBatchRow();
+    batchOverlay.classList.add('show');
+  }
+  function closeBatchModal(){ batchOverlay.classList.remove('show'); }
+
+  document.getElementById('batchBtn').addEventListener('click', openBatchModal);
+  document.getElementById('batchAddRow').addEventListener('click', () => createBatchRow());
+  document.getElementById('batchClose').addEventListener('click', closeBatchModal);
+  batchOverlay.addEventListener('click', (ev) => { if(ev.target === batchOverlay) closeBatchModal(); });
+
+  document.getElementById('batchSaveAll').addEventListener('click', () => {
+    batchRows.forEach(row => { row.warnEl.style.display = 'none'; row.rowEl.classList.remove('row-error'); });
+
+    // Bước 1: gom các dòng hợp lệ (đủ thông tin), đánh dấu dòng thiếu thông tin
+    const candidates = [];
+    let incompleteCount = 0;
+    const incompleteRows = [];
+
+    batchRows.forEach(row => {
+      const rateId = row.rateSelect.value;
+      const date = row.dateInput.value;
+      const start = row.startTime;
+      const end = row.endTime;
+
+      const isEmpty = !rateId && !row.slotInput.value.trim() && !Number(row.amountInput.value) && !date;
+      if(isEmpty) return; // dòng trống hoàn toàn, bỏ qua không giữ lại
+
+      if(!rateId || !date || !start || !end){
+        row.warnEl.textContent = 'Thiếu brand, ngày hoặc khung giờ hợp lệ.';
+        row.warnEl.style.display = 'block';
+        row.rowEl.classList.add('row-error');
+        incompleteCount++;
+        incompleteRows.push(row);
+        return;
+      }
+      candidates.push({ row, rateId, date, start, end });
+    });
+
+    // Bước 2: kiểm tra từng dòng với các lịch ĐÃ LƯU trước đó
+    candidates.forEach(c => { c.conflictsExisting = findConflicts(c.date, c.start, c.end, null); });
+
+    // Bước 3: kiểm tra chéo giữa các dòng ĐANG THÊM với nhau — nếu 2 dòng trùng nhau thì cả 2 đều bị chặn
+    for(let i = 0; i < candidates.length; i++){
+      for(let j = i+1; j < candidates.length; j++){
+        const a = candidates[i], b = candidates[j];
+        if(a.date !== b.date) continue;
+        if(doOverlap(a.start, a.end, b.start, b.end)){
+          (a.conflictsBatch = a.conflictsBatch || []).push(b);
+          (b.conflictsBatch = b.conflictsBatch || []).push(a);
+        }
+      }
+    }
+
+    // Bước 4: lưu những dòng KHÔNG trùng với bất kỳ ai (đã lưu lẫn dòng khác trong batch)
+    let savedCount = 0, conflictCount = 0;
+    const remaining = [...incompleteRows];
+    const batchCreatedBase = Date.now();
+
+    candidates.forEach((c, idx) => {
+      const hasConflict = (c.conflictsExisting && c.conflictsExisting.length > 0) || (c.conflictsBatch && c.conflictsBatch.length > 0);
+      if(hasConflict){
+        let msg;
+        if(c.conflictsExisting && c.conflictsExisting.length > 0){
+          const e = c.conflictsExisting[0];
+          msg = `Trùng/sát giờ với "${e.brandName}" (${e.startTime}–${e.endTime}) đã có trong lịch.`;
+        }else{
+          const other = c.conflictsBatch[0];
+          const otherRateName = rateById(other.rateId)?.name || '';
+          msg = `Trùng/sát giờ với dòng khác trong danh sách (${other.start}–${other.end}${otherRateName ? ' · ' + otherRateName : ''}).`;
+        }
+        c.row.warnEl.textContent = msg;
+        c.row.warnEl.style.display = 'block';
+        c.row.rowEl.classList.add('row-error');
+        conflictCount++;
+        remaining.push(c.row);
+      }else{
+        const r = rateById(c.rateId);
+        const hours = durationHours(c.start, c.end);
+        const computed = Math.round((r ? r.rate : 0) * hours);
+        const amount = Number(c.row.amountInput.value) || 0;
+        const isOverride = amount !== computed;
+        entries.push({ id: uid(), rateId: c.rateId, brandName: r ? r.name : 'Không rõ', date: c.date, startTime: c.start, endTime: c.end, amount, isOverride, createdAt: batchCreatedBase + idx });
+        savedCount++;
+        c.row.rowEl.remove();
+      }
+    });
+
+    batchRows = remaining;
+    if(savedCount > 0){ saveEntries(); showToast(`Đã lưu ${savedCount} lịch.`); }
+
+    const parts = [];
+    if(savedCount) parts.push(`Đã lưu ${savedCount} lịch`);
+    if(conflictCount) parts.push(`${conflictCount} lịch bị trùng giờ (chưa lưu)`);
+    if(incompleteCount) parts.push(`${incompleteCount} lịch thiếu thông tin`);
+    batchStatus.textContent = parts.length ? parts.join(' · ') + '.' : 'Chưa có lịch nào để lưu — điền thông tin rồi bấm Lưu tất cả.';
+
+    if(savedCount > 0) renderAll();
+    if(batchRows.length === 0 && savedCount > 0) closeBatchModal();
+  });
+
+  // ---------- Nav ----------
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    if(viewMode === 'all'){ const t = new Date(); viewYear = t.getFullYear(); viewMonth = t.getMonth(); viewMode = 'month'; }
+    viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderAll();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    if(viewMode === 'all'){ const t = new Date(); viewYear = t.getFullYear(); viewMonth = t.getMonth(); viewMode = 'month'; }
+    viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderAll();
+  });
+  document.getElementById('filterMonth').addEventListener('change', (ev) => {
+    if(ev.target.value === 'all'){ viewMode = 'all'; }
+    else{ viewMode = 'month'; viewMonth = Number(ev.target.value); }
+    renderAll();
+  });
+  document.getElementById('filterYear').addEventListener('change', (ev) => {
+    viewYear = Number(ev.target.value);
+    renderAll();
+  });
+  document.getElementById('tabList').addEventListener('click', () => setTab('list'));
+  document.getElementById('tabCal').addEventListener('click', () => setTab('cal'));
+  document.getElementById('fabAdd').addEventListener('click', () => openEntryModal(null));
+  document.getElementById('searchInput').addEventListener('input', (ev) => { searchQuery = ev.target.value; renderList(); });
+
+  // ---------- Init ----------
+  (function init(){
+    const now = new Date();
+    viewYear = now.getFullYear(); viewMonth = now.getMonth();
+    loadAll();
+    loadSyncConfig();
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('viewList').style.display = 'flex';
+    renderAll();
+    if(syncConfig) attemptInitialSync();
+  })();
+})();
+</script>
+</body>
+</html>
