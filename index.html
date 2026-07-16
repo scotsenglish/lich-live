@@ -227,6 +227,30 @@
   .combo-item:hover{ background: var(--panel-2); color: var(--gold); }
   .combo-item + .combo-item{ border-top: 1px solid var(--border-soft); }
   .combo-empty{ padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+  .combo-item.combo-add-new{ color: var(--gold); font-weight: 600; font-family: var(--font-body); border-top: 1px solid var(--border-soft); }
+  .combo-item.combo-add-new:hover{ background: var(--panel-2); }
+  .slot-chip-list{ display:flex; flex-wrap: wrap; gap: 8px; }
+  .slot-chip{
+    display:flex; align-items:center; gap: 6px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 6px 6px 12px; font-family: var(--font-mono); font-size: 13px; color: var(--text);
+  }
+  .slot-chip button{
+    border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px;
+    width: 20px; height: 20px; border-radius: 50%; display:flex; align-items:center; justify-content:center; flex-shrink: 0;
+  }
+  .slot-chip button:hover{ background: var(--red-soft-bg); color: var(--red); }
+  .brand-stat-row{
+    display:flex; justify-content: space-between; align-items: center; gap: 10px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .brand-stat-row .bsr-name{ font-weight: 600; font-size: 13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brand-stat-row .bsr-nums{ display:flex; gap: 12px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  .brand-stat-row .bsr-nums .bsr-money{ color: var(--gold); font-weight: 600; }
+  .brand-stat-row.bsr-total{ background: var(--panel); border-color: var(--gold); margin-top: 4px; }
+  .brand-stat-row.bsr-total .bsr-name{ font-weight: 800; }
+  .brand-stat-row.bsr-total .bsr-nums .bsr-money{ font-weight: 800; }
   .date-display-fake{
     width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
     border-radius: var(--radius-sm); padding: 11px 12px; font-size: 15px; font-family: var(--font-body);
@@ -289,6 +313,10 @@
   .batch-status{ font-size: 12.5px; color: var(--muted); margin-bottom: 12px; min-height: 1em; }
 
   /* ---------- NOTICE BOARD: hôm nay / ngày mai ---------- */
+  .live-clock{
+    text-align: center; font-family: var(--font-mono); font-size: 28px; font-weight: 600;
+    color: var(--text); letter-spacing: 0.04em; margin-bottom: 18px;
+  }
   .notice-board{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   @media (max-width: 560px){ .notice-board{ grid-template-columns: 1fr; } }
   .notice-col{ background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; box-shadow: var(--shadow-card); }
@@ -301,6 +329,14 @@
   .notice-item{ display:flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; }
   .notice-item .notice-time{ font-family: var(--font-mono); color: var(--gold); flex-shrink: 0; font-size: 12.5px; }
   .notice-item .notice-name{ color: var(--text); font-weight: 500; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .notice-item.notice-past{ opacity: 0.4; }
+  .notice-item.notice-upcoming .notice-time,
+  .notice-item.notice-upcoming .notice-name{ font-weight: 800; }
+  .notice-item.notice-soon .notice-time,
+  .notice-item.notice-soon .notice-name{ font-weight: 800; color: var(--red); }
+  .notice-item.notice-soon{ animation: noticeBlink 1.3s ease-in-out infinite; }
+  @keyframes noticeBlink{ 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @media (prefers-reduced-motion: reduce){ .notice-item.notice-soon{ animation: none; } }
   .notice-empty{ font-size: 12.5px; color: var(--muted); font-style: italic; }
 
   .form-error{ font-size: 12.5px; color: var(--red); background: var(--red-soft-bg); border: 1px solid var(--red-border); border-radius: var(--radius-sm); padding: 9px 11px; margin-bottom: 12px; display:none; }
@@ -339,10 +375,11 @@
       <div class="dot"></div>
       <div>
         <h1>Lịch <span>Live</span></h1>
-        <p>Quản lý lịch phát trực tiếp hằng tháng</p>
       </div>
     </div>
   </header>
+
+  <div class="live-clock" id="liveClock">--:--:--</div>
 
   <div class="notice-board" id="noticeBoard">
     <div class="notice-col">
@@ -378,7 +415,8 @@
     <div class="right-tools">
       <button class="pillbtn" id="batchBtn">➕ Thêm nhiều</button>
       <button class="pillbtn" id="ratesBtn">🏷️ Bảng giá</button>
-      <button class="pillbtn" id="syncBtn">☁️ Đồng bộ</button>
+      <button class="pillbtn" id="slotsBtn">⏱️ Khung giờ</button>
+      <button class="pillbtn" id="brandStatsBtn">📊 Theo brand</button>
     </div>
   </div>
 
@@ -482,13 +520,45 @@
     </div>
     <div class="field">
       <label for="rRate">Đơn giá / giờ (đ)</label>
-      <input type="number" id="rRate" placeholder="0" min="0" step="1000" inputmode="numeric">
+      <input type="text" id="rRate" placeholder="0" inputmode="numeric">
     </div>
     <div class="form-error" id="rateFormError"></div>
     <div class="sheet-actions">
       <button class="btn danger" id="rateDelete" style="display:none;">Xoá</button>
       <button class="btn ghost" id="rateCancel">Huỷ</button>
       <button class="btn primary" id="rateSave">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Khung giờ cố định -->
+<div class="overlay" id="slotsOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Khung giờ cố định</h2>
+    <div class="field-note" style="margin-bottom:12px;">Đây là các khung giờ gợi ý khi thêm lịch. Bấm × để xoá bớt, hoặc thêm khung giờ mới bên dưới.</div>
+    <div class="slot-chip-list" id="slotChipList"></div>
+    <div class="field" style="margin-top:16px;">
+      <label for="newSlotInput">Thêm khung giờ mới</label>
+      <input type="text" id="newSlotInput" placeholder="VD: 20:00-22:00" autocomplete="off">
+    </div>
+    <div class="form-error" id="slotFormError"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="slotsClose">Đóng</button>
+      <button class="btn primary" id="slotsAddBtn">+ Thêm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Thống kê theo brand -->
+<div class="overlay" id="brandStatsOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Thống kê theo brand</h2>
+    <div class="field-note" id="brandStatsScope" style="margin-bottom:12px;"></div>
+    <div id="brandStatsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="brandStatsClose">Đóng</button>
     </div>
   </div>
 </div>
@@ -526,26 +596,11 @@
   </div>
 </div>
 
-<!-- Sync settings (Firebase) -->
-<div class="overlay" id="syncOverlay">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <h2>Đồng bộ giữa các máy</h2>
-    <div class="hint-note">
-      App đang đồng bộ <strong>real-time qua Firebase</strong>. Mọi thay đổi trên máy này sẽ tự động xuất hiện trên các máy khác đang mở cùng link/file này, và ngược lại — không cần nhập gì thêm.
-    </div>
-    <div class="field-note" id="syncStatus">Đang kết nối...</div>
-    <div class="sheet-actions">
-      <button class="btn ghost" id="syncClose">Đóng</button>
-      <button class="btn primary" id="syncRefreshBtn">🔄 Làm mới</button>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
   const KEY_ENTRIES = 'livestream-entries';
   const KEY_RATES = 'livestream-rates';
+  const KEY_TIMESLOTS = 'livestream-timeslots';
 
   let entries = [];
   let rates = [];
@@ -560,16 +615,36 @@
   const monthNames = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
   const weekdayShort = ['CN','T2','T3','T4','T5','T6','T7'];
 
-  // MOCK — danh sách khung giờ tạm để test. Khi có danh sách thật, chỉ cần thay mảng này.
-  const MOCK_TIME_SLOTS = [
-    '08:00–10:00','10:00–12:00','12:00–14:00','14:00–16:00','16:00–18:00',
-    '18:00–20:00','19:00–21:00','20:00–22:00','21:00–23:00','22:00–00:00'
+  // Danh sách khung giờ cố định — có thể thêm/xoá trong app (nút "⏱️ Khung giờ")
+  const DEFAULT_TIME_SLOTS = [
+    '19:45–21:15','09:30–15:00','09:30–14:30','10:00–13:00','10:00–14:00',
+    '11:00–14:00','11:00–15:00','11:00–13:00','10:00–15:00','12:00–16:00',
+    '09:30–13:30','13:00–15:00','07:30–11:30','10:00–12:30','13:30–16:00',
+    '15:00–19:00','16:00–18:00','16:00–18:30','16:00–19:00','16:00–20:00',
+    '10:00–12:00','17:00–19:00','19:00–21:00','19:00–22:00','19:00–21:30',
+    '19:00–23:30','19:30–22:00','19:00–23:00','20:00–22:00','20:00–23:00',
+    '21:30–23:30','21:00–00:00','18:00–21:00','19:30–21:30','09:00–13:00',
+    '11:30–15:00'
   ];
+  let timeSlots = [];
 
   const pad2 = n => String(n).padStart(2,'0');
   const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   const moneyFmt = new Intl.NumberFormat('vi-VN');
+  function parseThousandInput(str){
+    const digits = (str || '').replace(/\D/g, '');
+    return digits ? Number(digits) : 0;
+  }
+  function formatThousandInput(num){
+    return num ? moneyFmt.format(num) : '';
+  }
+  function wireThousandInput(inputEl){
+    inputEl.addEventListener('input', () => {
+      const num = parseThousandInput(inputEl.value);
+      inputEl.value = formatThousandInput(num);
+    });
+  }
 
   function todayISO(){ return isoDate(new Date()); }
   function weekdayReadoutText(iso){
@@ -667,6 +742,20 @@
   function loadAll(){
     try{ entries = JSON.parse(localStorage.getItem(KEY_ENTRIES) || '[]'); } catch(e){ entries = []; }
     try{ rates = JSON.parse(localStorage.getItem(KEY_RATES) || '[]'); } catch(e){ rates = []; }
+    loadTimeSlots();
+  }
+  function loadTimeSlots(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(KEY_TIMESLOTS) || 'null');
+      if(Array.isArray(raw) && raw.length > 0){ timeSlots = raw; return; }
+    }catch(e){}
+    timeSlots = DEFAULT_TIME_SLOTS.map(s => ({ id: uid(), slot: s }));
+    saveTimeSlots();
+  }
+  function saveTimeSlots(){
+    try{ localStorage.setItem(KEY_TIMESLOTS, JSON.stringify(timeSlots)); }
+    catch(e){ console.error('Lỗi lưu khung giờ', e); }
+    scheduleCloudPush();
   }
   function saveEntries(){
     try{ localStorage.setItem(KEY_ENTRIES, JSON.stringify(entries)); }
@@ -715,8 +804,10 @@
           const data = doc.data() || {};
           entries = Array.isArray(data.entries) ? data.entries : [];
           rates = Array.isArray(data.rates) ? data.rates : [];
+          if(Array.isArray(data.timeSlots) && data.timeSlots.length > 0){ timeSlots = data.timeSlots; }
           try{ localStorage.setItem(KEY_ENTRIES, JSON.stringify(entries)); }catch(e){}
           try{ localStorage.setItem(KEY_RATES, JSON.stringify(rates)); }catch(e){}
+          try{ localStorage.setItem(KEY_TIMESLOTS, JSON.stringify(timeSlots)); }catch(e){}
           renderAll();
         }else if(entries.length > 0 || rates.length > 0){
           // Chưa có dữ liệu chung trên cloud, máy này đã có sẵn dữ liệu -> đẩy lên để khởi tạo
@@ -733,7 +824,7 @@
 
   function cloudPush(){
     if(!firebaseReady || !syncDocRef) return;
-    syncDocRef.set({ entries, rates, updatedAt: Date.now() })
+    syncDocRef.set({ entries, rates, timeSlots, updatedAt: Date.now() })
       .then(() => setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr()))
       .catch((e) => setSyncStatusText('⚠️ Lỗi đồng bộ: ' + e.message));
   }
@@ -742,31 +833,6 @@
     if(syncPushTimer) clearTimeout(syncPushTimer);
     syncPushTimer = setTimeout(cloudPush, 700);
   }
-
-  document.getElementById('syncBtn').addEventListener('click', () => {
-    document.getElementById('syncOverlay').classList.add('show');
-  });
-  document.getElementById('syncClose').addEventListener('click', () => document.getElementById('syncOverlay').classList.remove('show'));
-  document.getElementById('syncOverlay').addEventListener('click', (ev) => {
-    if(ev.target === document.getElementById('syncOverlay')) document.getElementById('syncOverlay').classList.remove('show');
-  });
-  document.getElementById('syncRefreshBtn').addEventListener('click', async () => {
-    if(!firebaseReady || !syncDocRef){ showToast('Chưa kết nối được Firebase.'); return; }
-    setSyncStatusText('Đang làm mới...');
-    try{
-      const doc = await syncDocRef.get();
-      if(doc.exists){
-        const data = doc.data() || {};
-        entries = Array.isArray(data.entries) ? data.entries : [];
-        rates = Array.isArray(data.rates) ? data.rates : [];
-        renderAll();
-      }
-      setSyncStatusText('Đã đồng bộ lúc ' + nowTimeStr());
-      showToast('Đã làm mới dữ liệu.');
-    }catch(e){
-      setSyncStatusText('⚠️ Lỗi: ' + e.message);
-    }
-  });
 
   // ---------- Derived data ----------
   function entriesForMonth(y, m){ const prefix = `${y}-${pad2(m+1)}`; return entries.filter(e => e.date && e.date.startsWith(prefix)); }
@@ -798,26 +864,56 @@
     const norm = t => { const [h,m] = t.split(':'); return pad2(Number(h)) + ':' + pad2(Number(m)); };
     return { start: norm(matches[0]), end: norm(matches[1]) };
   }
+  function timeSlotStrings(){
+    return [...timeSlots].sort((a,b) => minutesOf(a.slot.split('–')[0]) - minutesOf(b.slot.split('–')[0])).map(t => t.slot);
+  }
   function filterSlots(query){
     const q = query.trim().toLowerCase();
-    if(!q) return MOCK_TIME_SLOTS;
-    return MOCK_TIME_SLOTS.filter(s => s.toLowerCase().replace('–','-').includes(q.replace('–','-')));
+    const all = timeSlotStrings();
+    if(!q) return all;
+    return all.filter(s => s.toLowerCase().replace('–','-').includes(q.replace('–','-')));
+  }
+  function addTimeSlotIfNew(normalized){
+    if(timeSlots.some(t => t.slot === normalized)) return;
+    timeSlots.push({ id: uid(), slot: normalized });
+    saveTimeSlots();
   }
   function wireSlotCombo(slotInput, listEl, onParsed){
     function refresh(){
-      const list = filterSlots(slotInput.value);
-      if(list.length === 0){
-        listEl.innerHTML = `<div class="combo-empty">Không có khung khớp — gõ tiếp để nhập giờ tuỳ ý.</div>`;
+      const q = slotInput.value.trim();
+      const list = filterSlots(q);
+      const parsed = parseSlotText(q);
+      const normalized = parsed ? `${parsed.start}–${parsed.end}` : null;
+      const isNew = normalized && !timeSlots.some(t => t.slot === normalized);
+      let html = '';
+      if(list.length === 0 && !isNew){
+        html = `<div class="combo-empty">Không có khung khớp — gõ tiếp để nhập giờ tuỳ ý.</div>`;
       }else{
-        listEl.innerHTML = list.map(s => `<div class="combo-item" data-val="${s}">${s}</div>`).join('');
-        listEl.querySelectorAll('.combo-item').forEach(el => {
-          el.addEventListener('mousedown', ev => {
-            ev.preventDefault();
-            slotInput.value = el.dataset.val;
-            listEl.style.display = 'none';
-            const parsed = parseSlotText(el.dataset.val);
-            if(parsed) onParsed(parsed.start, parsed.end);
-          });
+        html = list.map(s => `<div class="combo-item" data-val="${s}">${s}</div>`).join('');
+      }
+      if(isNew){
+        html += `<div class="combo-item combo-add-new" data-add="${normalized}">➕ Thêm "${normalized}" vào khung giờ cố định</div>`;
+      }
+      listEl.innerHTML = html;
+      listEl.querySelectorAll('.combo-item[data-val]').forEach(el => {
+        el.addEventListener('mousedown', ev => {
+          ev.preventDefault();
+          slotInput.value = el.dataset.val;
+          listEl.style.display = 'none';
+          const p = parseSlotText(el.dataset.val);
+          if(p) onParsed(p.start, p.end);
+        });
+      });
+      const addEl = listEl.querySelector('.combo-item[data-add]');
+      if(addEl){
+        addEl.addEventListener('mousedown', ev => {
+          ev.preventDefault();
+          addTimeSlotIfNew(addEl.dataset.add);
+          slotInput.value = addEl.dataset.add;
+          listEl.style.display = 'none';
+          const p = parseSlotText(addEl.dataset.add);
+          if(p) onParsed(p.start, p.end);
+          showToast('Đã thêm khung giờ vào danh sách cố định.');
         });
       }
       listEl.style.display = 'block';
@@ -937,12 +1033,21 @@
     grid.querySelectorAll('.cal-cell').forEach(el => { if(el.dataset.inmonth === '1') el.addEventListener('click', () => openDayModal(el.dataset.date)); });
   }
 
+  function noticeTimeState(e){
+    const startDt = new Date(`${e.date}T${e.startTime}:00`);
+    let endDt = new Date(`${e.date}T${e.endTime}:00`);
+    if(endDt <= startDt) endDt = new Date(endDt.getTime() + 24*60*60*1000);
+    const now = new Date();
+    if(now >= endDt) return 'past';
+    if(startDt.getTime() - now.getTime() <= 2*60*60*1000) return 'soon';
+    return 'upcoming';
+  }
   function fillNoticeList(elId, iso){
     const list = sortedByDateTime(entriesForDate(iso));
     const el = document.getElementById(elId);
     if(list.length === 0){ el.innerHTML = `<div class="notice-empty">Không có lịch live.</div>`; return; }
     el.innerHTML = list.map(e => `
-      <div class="notice-item">
+      <div class="notice-item notice-${noticeTimeState(e)}">
         <span class="notice-time">${e.startTime}–${e.endTime}</span>
         <span class="notice-name">${escapeHtml(e.brandName || 'Chưa rõ brand')}</span>
       </div>`).join('');
@@ -1191,6 +1296,7 @@
   const rateDeleteEl = document.getElementById('rateDelete');
   let rateDeleteArmed = false;
   let rateDeleteArmedTimer = null;
+  wireThousandInput(rRate);
 
   function showRateError(msg){ rateFormError.textContent = msg; rateFormError.style.display = 'block'; }
   function clearRateError(){ rateFormError.textContent = ''; rateFormError.style.display = 'none'; }
@@ -1206,7 +1312,7 @@
     const title = document.getElementById('rateEditTitle');
     clearRateError();
     disarmRateDelete();
-    if(id){ const r = rateById(id); title.textContent = 'Sửa brand'; rateDeleteEl.style.display = 'inline-block'; rName.value = r.name; rRate.value = r.rate; }
+    if(id){ const r = rateById(id); title.textContent = 'Sửa brand'; rateDeleteEl.style.display = 'inline-block'; rName.value = r.name; rRate.value = formatThousandInput(r.rate); }
     else{ title.textContent = 'Thêm brand'; rateDeleteEl.style.display = 'none'; rName.value = ''; rRate.value = ''; }
     rateEditOverlay.classList.add('show');
   }
@@ -1216,7 +1322,7 @@
   document.getElementById('rateSave').addEventListener('click', () => {
     clearRateError();
     const name = rName.value.trim();
-    const rate = Number(rRate.value) || 0;
+    const rate = parseThousandInput(rRate.value);
     if(!name){ showRateError('Vui lòng nhập tên brand.'); return; }
     if(editingRateId){ Object.assign(rateById(editingRateId), { name, rate }); }
     else{ rates.push({ id: uid(), name, rate }); }
@@ -1239,6 +1345,102 @@
     showToast('Đã xoá brand.');
     closeRateEditModal();
     renderRatesList();
+  });
+
+  // ================= THỐNG KÊ THEO BRAND =================
+  function computeBrandStats(){
+    const list = currentEntryList();
+    const map = {};
+    list.forEach(e => {
+      const key = e.brandName || 'Chưa rõ brand';
+      if(!map[key]) map[key] = { count: 0, hours: 0, money: 0 };
+      map[key].count++;
+      map[key].hours += durationHours(e.startTime, e.endTime);
+      map[key].money += Number(e.amount) || 0;
+    });
+    const rows = Object.keys(map).map(name => ({ name, ...map[name] })).sort((a,b) => b.money - a.money);
+    const total = rows.reduce((acc, r) => ({ count: acc.count + r.count, hours: acc.hours + r.hours, money: acc.money + r.money }), { count: 0, hours: 0, money: 0 });
+    return { rows, total };
+  }
+  function renderBrandStatsModal(){
+    const { rows, total } = computeBrandStats();
+    const scopeLabel = viewMode === 'all' ? 'Tất cả các tháng' : `${monthNames[viewMonth]}, ${viewYear}`;
+    document.getElementById('brandStatsScope').textContent = scopeLabel;
+    const wrap = document.getElementById('brandStatsList');
+    if(rows.length === 0){
+      wrap.innerHTML = `<div class="notice-empty">Chưa có dữ liệu trong khoảng này.</div>`;
+      return;
+    }
+    const rowHtml = (r, extraClass) => `
+      <div class="brand-stat-row ${extraClass || ''}">
+        <div class="bsr-name">${escapeHtml(r.name)}</div>
+        <div class="bsr-nums">
+          <span>${r.count} buổi</span>
+          <span>${Math.round(r.hours*10)/10} giờ</span>
+          <span class="bsr-money">${moneyFmt.format(r.money)}đ</span>
+        </div>
+      </div>`;
+    wrap.innerHTML = rows.map(r => rowHtml(r)).join('') + rowHtml({ name: 'Tổng cộng', ...total }, 'bsr-total');
+  }
+  document.getElementById('brandStatsBtn').addEventListener('click', () => {
+    renderBrandStatsModal();
+    document.getElementById('brandStatsOverlay').classList.add('show');
+  });
+  document.getElementById('brandStatsClose').addEventListener('click', () => document.getElementById('brandStatsOverlay').classList.remove('show'));
+  document.getElementById('brandStatsOverlay').addEventListener('click', (ev) => {
+    if(ev.target === document.getElementById('brandStatsOverlay')) document.getElementById('brandStatsOverlay').classList.remove('show');
+  });
+
+  // ================= KHUNG GIỜ CỐ ĐỊNH =================
+  const slotsOverlay = document.getElementById('slotsOverlay');
+  const newSlotInput = document.getElementById('newSlotInput');
+  const slotFormError = document.getElementById('slotFormError');
+
+  function renderSlotChips(){
+    const wrap = document.getElementById('slotChipList');
+    const sorted = [...timeSlots].sort((a,b) => minutesOf(a.slot.split('–')[0]) - minutesOf(b.slot.split('–')[0]));
+    if(sorted.length === 0){
+      wrap.innerHTML = `<div class="notice-empty">Chưa có khung giờ nào.</div>`;
+      return;
+    }
+    wrap.innerHTML = sorted.map(t => `<span class="slot-chip" data-id="${t.id}">${t.slot}<button type="button" aria-label="Xoá khung giờ">×</button></span>`).join('');
+    wrap.querySelectorAll('.slot-chip button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.parentElement.dataset.id;
+        timeSlots = timeSlots.filter(t => t.id !== id);
+        saveTimeSlots();
+        renderSlotChips();
+      });
+    });
+  }
+  function openSlotsModal(){
+    newSlotInput.value = '';
+    slotFormError.style.display = 'none';
+    renderSlotChips();
+    slotsOverlay.classList.add('show');
+  }
+  document.getElementById('slotsBtn').addEventListener('click', openSlotsModal);
+  document.getElementById('slotsClose').addEventListener('click', () => slotsOverlay.classList.remove('show'));
+  slotsOverlay.addEventListener('click', (ev) => { if(ev.target === slotsOverlay) slotsOverlay.classList.remove('show'); });
+  document.getElementById('slotsAddBtn').addEventListener('click', () => {
+    slotFormError.style.display = 'none';
+    const parsed = parseSlotText(newSlotInput.value);
+    if(!parsed){
+      slotFormError.textContent = 'Định dạng chưa đúng, VD: 20:00-22:00';
+      slotFormError.style.display = 'block';
+      return;
+    }
+    const normalized = `${parsed.start}–${parsed.end}`;
+    if(timeSlots.some(t => t.slot === normalized)){
+      slotFormError.textContent = 'Khung giờ này đã có trong danh sách.';
+      slotFormError.style.display = 'block';
+      return;
+    }
+    timeSlots.push({ id: uid(), slot: normalized });
+    saveTimeSlots();
+    newSlotInput.value = '';
+    renderSlotChips();
+    showToast('Đã thêm khung giờ.');
   });
 
   // ================= BATCH ADD (nhiều lịch cùng lúc) =================
@@ -1427,6 +1629,11 @@
   document.getElementById('searchInput').addEventListener('input', (ev) => { searchQuery = ev.target.value; renderList(); });
 
   // ---------- Init ----------
+  function updateLiveClock(){
+    const d = new Date();
+    const el = document.getElementById('liveClock');
+    if(el) el.textContent = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  }
   (function init(){
     const now = new Date();
     viewYear = now.getFullYear(); viewMonth = now.getMonth();
@@ -1435,6 +1642,9 @@
     document.getElementById('viewList').style.display = 'flex';
     renderAll();
     initFirebaseSync();
+    setInterval(renderNoticeBoard, 60000);
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
   })();
 })();
 </script>
