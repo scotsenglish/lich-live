@@ -196,6 +196,7 @@
 
   /* ---------- MODAL / SHEET ---------- */
   .overlay{ position: fixed; inset: 0; background: rgba(30,26,20,0.4); backdrop-filter: blur(2px); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+  .overlay.layer2{ z-index: 70; }
   .overlay.show{ display: flex; }
   .sheet{
     background: var(--panel); border: 1px solid var(--border); width: 100%; max-width: 480px;
@@ -572,7 +573,7 @@
 </div>
 
 <!-- Xác nhận xoá lịch (từ danh sách chính) -->
-<div class="overlay" id="confirmDeleteOverlay">
+<div class="overlay layer2" id="confirmDeleteOverlay">
   <div class="sheet" style="max-width:400px;">
     <div class="sheet-handle"></div>
     <h2>Xoá lịch live?</h2>
@@ -580,6 +581,19 @@
     <div class="sheet-actions">
       <button class="btn ghost" id="confirmDeleteCancel">Huỷ</button>
       <button class="btn danger" id="confirmDeleteOk" style="flex:1;">Xoá</button>
+    </div>
+  </div>
+</div>
+
+<!-- Xác nhận thêm mới (dùng chung: lịch, brand, khung giờ, thêm nhiều lịch) -->
+<div class="overlay layer2" id="actionConfirmOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-handle"></div>
+    <h2 id="actionConfirmTitle">Xác nhận</h2>
+    <div class="hint-note" id="actionConfirmInfo"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="actionConfirmCancel">Huỷ</button>
+      <button class="btn primary" id="actionConfirmOk" style="flex:1;">Xác nhận</button>
     </div>
   </div>
 </div>
@@ -1240,20 +1254,29 @@
 
     const brandName = r ? r.name : (entries.find(x => x.id === editingEntryId)?.brandName || 'Không rõ');
 
+    const doSaveEntry = () => {
+      if(editingEntryId){
+        const e = entries.find(x => x.id === editingEntryId);
+        Object.assign(e, { rateId, brandName, date, startTime, endTime, amount, isOverride });
+      }else{
+        entries.push({ id: uid(), rateId, brandName, date, startTime, endTime, amount, isOverride, createdAt: Date.now() });
+      }
+      saveEntries();
+      showToast(editingEntryId ? 'Đã cập nhật lịch.' : 'Đã lưu lịch.');
+
+      const d = new Date(date + 'T00:00:00');
+      viewYear = d.getFullYear(); viewMonth = d.getMonth();
+
+      closeEntryModal();
+      renderAll();
+    };
+
     if(editingEntryId){
-      const e = entries.find(x => x.id === editingEntryId);
-      Object.assign(e, { rateId, brandName, date, startTime, endTime, amount, isOverride });
+      doSaveEntry();
     }else{
-      entries.push({ id: uid(), rateId, brandName, date, startTime, endTime, amount, isOverride, createdAt: Date.now() });
+      const infoHtml = `<strong>${escapeHtml(brandName)}</strong><br>${weekdayReadoutText(date)}<br>${startTime}–${endTime}<br>${moneyFmt.format(amount)}đ`;
+      openActionConfirm('Xác nhận thêm lịch live', infoHtml, doSaveEntry);
     }
-    saveEntries();
-    showToast(editingEntryId ? 'Đã cập nhật lịch.' : 'Đã lưu lịch.');
-
-    const d = new Date(date + 'T00:00:00');
-    viewYear = d.getFullYear(); viewMonth = d.getMonth();
-
-    closeEntryModal();
-    renderAll();
   });
 
   btnDeleteEl.addEventListener('click', () => {
@@ -1352,12 +1375,22 @@
     const name = rName.value.trim();
     const rate = parseThousandInput(rRate.value);
     if(!name){ showRateError('Vui lòng nhập tên brand.'); return; }
-    if(editingRateId){ Object.assign(rateById(editingRateId), { name, rate }); }
-    else{ rates.push({ id: uid(), name, rate }); }
-    saveRates();
-    showToast('Đã lưu brand.');
-    closeRateEditModal();
-    renderRatesList();
+
+    const doSaveRate = () => {
+      if(editingRateId){ Object.assign(rateById(editingRateId), { name, rate }); }
+      else{ rates.push({ id: uid(), name, rate }); }
+      saveRates();
+      showToast('Đã lưu brand.');
+      closeRateEditModal();
+      renderRatesList();
+    };
+
+    if(editingRateId){
+      doSaveRate();
+    }else{
+      const infoHtml = `<strong>${escapeHtml(name)}</strong><br>${moneyFmt.format(rate)}đ / giờ`;
+      openActionConfirm('Xác nhận thêm brand', infoHtml, doSaveRate);
+    }
   });
   rateDeleteEl.addEventListener('click', () => {
     if(!editingRateId) return;
@@ -1373,6 +1406,24 @@
     showToast('Đã xoá brand.');
     closeRateEditModal();
     renderRatesList();
+  });
+
+  // ================= XÁC NHẬN THÊM MỚI (dùng chung) =================
+  let pendingConfirmAction = null;
+  const actionConfirmOverlay = document.getElementById('actionConfirmOverlay');
+  function openActionConfirm(title, infoHtml, onConfirm){
+    document.getElementById('actionConfirmTitle').textContent = title;
+    document.getElementById('actionConfirmInfo').innerHTML = infoHtml;
+    pendingConfirmAction = onConfirm;
+    actionConfirmOverlay.classList.add('show');
+  }
+  function closeActionConfirm(){ actionConfirmOverlay.classList.remove('show'); pendingConfirmAction = null; }
+  document.getElementById('actionConfirmCancel').addEventListener('click', closeActionConfirm);
+  actionConfirmOverlay.addEventListener('click', (ev) => { if(ev.target === actionConfirmOverlay) closeActionConfirm(); });
+  document.getElementById('actionConfirmOk').addEventListener('click', () => {
+    const fn = pendingConfirmAction;
+    closeActionConfirm();
+    if(fn) fn();
   });
 
   // ================= XÁC NHẬN XOÁ (từ danh sách chính) =================
@@ -1490,11 +1541,13 @@
       slotFormError.style.display = 'block';
       return;
     }
-    timeSlots.push({ id: uid(), slot: normalized });
-    saveTimeSlots();
-    newSlotInput.value = '';
-    renderSlotChips();
-    showToast('Đã thêm khung giờ.');
+    openActionConfirm('Xác nhận thêm khung giờ', `<strong>${normalized}</strong>`, () => {
+      timeSlots.push({ id: uid(), slot: normalized });
+      saveTimeSlots();
+      newSlotInput.value = '';
+      renderSlotChips();
+      showToast('Đã thêm khung giờ.');
+    });
   });
 
   // ================= BATCH ADD (nhiều lịch cùng lúc) =================
@@ -1567,7 +1620,7 @@
   document.getElementById('batchClose').addEventListener('click', closeBatchModal);
   batchOverlay.addEventListener('click', (ev) => { if(ev.target === batchOverlay) closeBatchModal(); });
 
-  document.getElementById('batchSaveAll').addEventListener('click', () => {
+  function doBatchSaveAll(){
     batchRows.forEach(row => { row.warnEl.style.display = 'none'; row.rowEl.classList.remove('row-error'); });
 
     // Bước 1: gom các dòng hợp lệ (đủ thông tin), đánh dấu dòng thiếu thông tin
@@ -1655,6 +1708,29 @@
 
     if(savedCount > 0) renderAll();
     if(batchRows.length === 0 && savedCount > 0) closeBatchModal();
+  }
+
+  document.getElementById('batchSaveAll').addEventListener('click', () => {
+    // Gom trước các dòng có vẻ hợp lệ để hiển thị tóm tắt xác nhận
+    const preview = [];
+    batchRows.forEach(row => {
+      const rateId = row.rateSelect.value;
+      const date = row.dateInput.value;
+      const start = row.startTime, end = row.endTime;
+      const isEmpty = !rateId && !row.slotInput.value.trim() && !Number(row.amountInput.value) && !date;
+      if(isEmpty || !rateId || !date || !start || !end) return;
+      const r = rateById(rateId);
+      preview.push(`${escapeHtml(r ? r.name : '—')} · ${weekdayReadoutTextShort(date)} · ${start}–${end}`);
+    });
+
+    if(preview.length === 0){
+      doBatchSaveAll(); // không có dòng hợp lệ nào -> chạy thẳng để hiển thị lỗi thiếu thông tin trên từng dòng
+      return;
+    }
+
+    const shown = preview.slice(0, 6).join('<br>');
+    const more = preview.length > 6 ? `<br>...và ${preview.length - 6} lịch khác` : '';
+    openActionConfirm(`Xác nhận thêm ${preview.length} lịch live`, shown + more, doBatchSaveAll);
   });
 
   // ---------- Nav ----------
