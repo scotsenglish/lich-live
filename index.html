@@ -161,6 +161,24 @@
   }
   .entry-card .entry-del-btn:hover{ color: var(--red); border-color: var(--red-border); background: var(--red-soft-bg); }
 
+  .entry-group-card{ cursor: default; align-items: flex-start; }
+  .entry-group-card:hover{ border-color: var(--border); background: var(--panel); }
+  .day-body{ flex: 1; min-width: 0; display:flex; flex-direction: column; gap: 12px; }
+  .brand-subgroup + .brand-subgroup{ padding-top: 12px; border-top: 1px solid var(--border-soft); }
+  .group-name{ font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+  .group-slots{ display:flex; flex-direction: column; gap: 5px; }
+  .group-slot-row{
+    display:flex; align-items:center; justify-content: space-between; gap: 10px;
+    padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .group-slot-row:hover{ background: var(--panel-2); border-color: var(--border); }
+  .group-slot-main{ display:flex; align-items: baseline; gap: 12px; flex: 1; min-width: 0; flex-wrap: wrap; }
+  .group-slot-main .slot-time{ font-family: var(--font-mono); font-size: 13px; color: var(--text); font-weight: 700; flex-shrink: 0; }
+  .group-slot-main .slot-amount{ font-family: var(--font-mono); font-size: 12px; color: var(--gold); font-weight: 400; }
+  .group-slot-main .slot-amount .ov{ font-family: var(--font-body); font-size: 9px; color: var(--muted-2); text-transform: uppercase; margin-left: 5px; }
+  .group-slot-row .entry-del-btn{ width: 28px; height: 28px; font-size: 12px; }
+
   .empty{ text-align: center; padding: 50px 20px; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius-lg); background: var(--panel); }
   .empty .big{ font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
   .empty .small{ font-size: 13px; }
@@ -223,10 +241,19 @@
   .field input:focus, .field select:focus{ border-color: var(--gold); }
   .field input::-webkit-calendar-picker-indicator{ cursor: pointer; }
   .field input:disabled{ opacity: 0.55; }
+  .combo-wrap input{ padding-right: 34px; }
   .field select{ cursor: pointer; }
   .row2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   .combo-wrap{ position: relative; }
+  .combo-clear-btn{
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 50%; border: none; background: var(--panel-2);
+    color: var(--muted); font-size: 14px; cursor: pointer; display: none;
+    align-items: center; justify-content: center; z-index: 5;
+  }
+  .combo-clear-btn.show{ display: flex; }
+  .combo-clear-btn:hover{ color: var(--red); background: var(--red-soft-bg); }
   .combo-list{
     position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--panel);
     border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 210px; overflow-y: auto;
@@ -320,6 +347,59 @@
   .batch-add-row-btn{ width:100%; padding:11px; border:1px dashed var(--border); border-radius:var(--radius-sm); background:transparent; color:var(--muted); font-size:13px; cursor:pointer; margin-bottom:14px; }
   .batch-add-row-btn:hover{ color:var(--text); border-color:var(--muted-2); }
   .batch-status{ font-size: 12.5px; color: var(--muted); margin-bottom: 12px; min-height: 1em; }
+
+  .mg-day-list{ display:flex; flex-direction:column; gap: 6px; margin-bottom: 14px; max-height: 48vh; overflow-y: auto; }
+  .mg-day-item{
+    display:flex; gap: 8px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--panel-2);
+    padding: 8px 10px;
+  }
+  .mg-day-label{
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align:center;
+    line-height: 1.25; flex-shrink: 0; width: 34px; padding-top: 7px;
+  }
+  .mg-day-label .wd{ font-weight: 700; color: var(--text); display:block; font-size: 12.5px; }
+  .mg-day-slots{ flex: 1; min-width: 0; display:flex; flex-direction:column; gap: 6px; }
+  .mg-slot-unit{ }
+  .mg-slot-row{
+    display:flex; align-items:center; gap: 6px;
+    border: 1px solid transparent; border-radius: var(--radius-sm); padding: 1px;
+  }
+  .mg-slot-row.mg-row-error{ border-color: var(--red-border); background: var(--red-soft-bg); padding: 5px; }
+  .mg-day-slot{ flex: 1; min-width: 0; position: relative; }
+  .mg-day-slot input{
+    width: 100%; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius-sm); padding: 8px 30px 8px 10px; font-size: 13px; outline: none;
+  }
+  .mg-day-slot .combo-clear-btn{ width: 20px; height: 20px; right: 5px; }
+  .mg-day-slot input:focus{ border-color: var(--gold); }
+  .mg-day-amount{
+    flex-shrink: 0; width: 78px; text-align: right; font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+  }
+  .mg-slot-row.mg-has-value .mg-day-amount{ color: var(--gold); font-weight: 600; }
+  .mg-remove-slot-btn{
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); font-size: 13px; cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mg-remove-slot-btn:hover{ color: var(--red); border-color: var(--red-border); }
+  .mg-slot-warn{ font-size: 11px; color: var(--red); margin: -2px 0 0; display: none; }
+  .mg-add-slot-link{
+    align-self: flex-start; border: none; background: none; color: var(--gold);
+    font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 2px 0;
+  }
+  .mg-add-slot-link:hover{ text-decoration: underline; }
+  .mg-existing-list{ display:flex; flex-direction:column; gap: 4px; }
+  .mg-existing-chip{
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--muted);
+    background: var(--panel); border: 1px dashed var(--border); border-radius: var(--radius-sm);
+    padding: 6px 8px; display:flex; align-items:center; gap: 6px; cursor: pointer;
+  }
+  .mg-existing-chip:hover{ border-color: var(--gold); color: var(--text); }
+  .mg-existing-chip span{
+    margin-left: auto; font-family: var(--font-body); font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted-2); flex-shrink: 0;
+  }
 
   /* ---------- NOTICE BOARD: hôm nay / ngày mai ---------- */
   .live-clock{
@@ -422,7 +502,6 @@
       <button id="tabCal">Lịch</button>
     </div>
     <div class="right-tools">
-      <button class="pillbtn" id="batchBtn">➕ Thêm nhiều</button>
       <button class="pillbtn" id="ratesBtn">🏷️ Bảng giá</button>
       <button class="pillbtn" id="slotsBtn">⏱️ Khung giờ</button>
       <button class="pillbtn" id="brandStatsBtn">📊 Theo brand</button>
@@ -445,7 +524,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Entry add/edit modal (1 lịch) -->
-<div class="overlay" id="entryOverlay">
+<div class="overlay layer2" id="entryOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h2 id="entryTitle">Thêm lịch live</h2>
@@ -464,10 +543,13 @@
       <input type="hidden" id="fDate">
     </div>
 
-    <div class="field combo-wrap">
+    <div class="field">
       <label for="fSlot">Khung giờ</label>
-      <input type="text" id="fSlot" placeholder="Gõ để tìm khung giờ, VD: 20:00–22:00" autocomplete="off">
-      <div class="combo-list" id="comboList"></div>
+      <div class="combo-wrap">
+        <input type="text" id="fSlot" placeholder="Gõ để tìm khung giờ, VD: 20:00–22:00" autocomplete="off">
+        <button type="button" class="combo-clear-btn" aria-label="Xoá khung giờ">×</button>
+        <div class="combo-list" id="comboList"></div>
+      </div>
       <div class="field-note">Chọn 1 khung có sẵn, hoặc gõ giờ tuỳ ý (VD: 9:00-11:30).</div>
       <input type="hidden" id="fStart">
       <input type="hidden" id="fEnd">
@@ -599,16 +681,28 @@
 </div>
 
 <!-- Batch add modal (nhiều lịch cùng lúc) -->
-<div class="overlay" id="batchOverlay">
+<div class="overlay" id="monthGridOverlay">
   <div class="sheet" style="max-width:560px;">
     <div class="sheet-handle"></div>
-    <h2>Thêm nhiều lịch live</h2>
-    <div class="batch-status" id="batchStatus"></div>
-    <div id="batchRows"></div>
-    <button type="button" class="batch-add-row-btn" id="batchAddRow">+ Thêm dòng</button>
+    <h2>Thêm lịch live</h2>
+    <div class="field">
+      <label for="mgBrand">Brand</label>
+      <select id="mgBrand"></select>
+    </div>
+    <div class="hint-note" id="mgNoRateHint" style="display:none;">
+      Chưa có brand nào trong bảng giá. Đóng lịch này, bấm <strong>🏷️ Bảng giá</strong> để thêm brand trước.
+    </div>
+    <div class="monthnav" style="margin: 4px 0 12px;">
+      <button type="button" class="iconbtn" id="mgPrevMonth" aria-label="Tháng trước">‹</button>
+      <div class="center"><div class="dp-label" id="mgMonthLabel">—</div></div>
+      <button type="button" class="iconbtn" id="mgNextMonth" aria-label="Tháng sau">›</button>
+    </div>
+    <div class="field-note" style="margin-bottom:10px;">Chỉ cần điền khung giờ cho ngày có live — để trống ngày không live.</div>
+    <div id="mgDayList" class="mg-day-list"></div>
+    <div class="batch-status" id="mgStatus"></div>
     <div class="sheet-actions">
-      <button class="btn ghost" id="batchClose">Đóng</button>
-      <button class="btn primary" id="batchSaveAll">Lưu tất cả</button>
+      <button class="btn ghost" id="mgClose">Đóng</button>
+      <button class="btn primary" id="mgSaveAll">Lưu tất cả</button>
     </div>
   </div>
 </div>
@@ -645,7 +739,6 @@
   let editingEntryId = null;
   let editingRateId = null;
   let dayModalDate = null;
-  let batchRows = [];
 
   const monthNames = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
   const weekdayShort = ['CN','T2','T3','T4','T5','T6','T7'];
@@ -667,6 +760,7 @@
   const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   const moneyFmt = new Intl.NumberFormat('vi-VN');
+  const ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
   function parseThousandInput(str){
     const digits = (str || '').replace(/\D/g, '');
     return digits ? Number(digits) : 0;
@@ -914,6 +1008,10 @@
     saveTimeSlots();
   }
   function wireSlotCombo(slotInput, listEl, onParsed){
+    const clearBtn = slotInput.parentElement.querySelector('.combo-clear-btn');
+    function updateClearBtn(){
+      if(clearBtn) clearBtn.classList.toggle('show', slotInput.value.trim().length > 0);
+    }
     function refresh(){
       const q = slotInput.value.trim();
       const list = filterSlots(q);
@@ -955,15 +1053,28 @@
     }
     slotInput.addEventListener('input', () => {
       refresh();
+      updateClearBtn();
       const parsed = parseSlotText(slotInput.value);
       if(parsed) onParsed(parsed.start, parsed.end);
+      else if(!slotInput.value.trim()) onParsed('', '');
     });
-    slotInput.addEventListener('focus', refresh);
+    slotInput.addEventListener('focus', () => { refresh(); updateClearBtn(); });
     slotInput.addEventListener('blur', () => {
       const parsed = parseSlotText(slotInput.value);
       if(parsed) onParsed(parsed.start, parsed.end);
       setTimeout(() => { listEl.style.display = 'none'; }, 120);
     });
+    if(clearBtn){
+      clearBtn.addEventListener('mousedown', ev => {
+        ev.preventDefault();
+        slotInput.value = '';
+        updateClearBtn();
+        onParsed('', '');
+        listEl.style.display = 'none';
+        slotInput.focus();
+      });
+    }
+    updateClearBtn();
   }
 
   // ---------- Rendering: stats / month ----------
@@ -1010,6 +1121,30 @@
   }
 
   let searchQuery = '';
+  function groupEntriesByDate(list){
+    const byDate = new Map();
+    list.forEach(e => {
+      if(!byDate.has(e.date)) byDate.set(e.date, []);
+      byDate.get(e.date).push(e);
+    });
+    const dayGroups = [...byDate.entries()].map(([date, items]) => ({ date, items }));
+    dayGroups.forEach(dg => {
+      const byBrand = new Map();
+      dg.items.forEach(e => {
+        const key = e.brandName || '';
+        if(!byBrand.has(key)) byBrand.set(key, []);
+        byBrand.get(key).push(e);
+      });
+      dg.brandGroups = [...byBrand.entries()].map(([brandName, items]) => {
+        items.sort((a,b) => minutesOf(a.startTime) - minutesOf(b.startTime));
+        return { brandName, items };
+      });
+      dg.brandGroups.sort((a,b) => minutesOf(a.items[0].startTime) - minutesOf(b.items[0].startTime));
+    });
+    dayGroups.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    return dayGroups;
+  }
+
   function renderList(){
     const wrap = document.getElementById('viewList');
     let base = currentEntryList();
@@ -1020,29 +1155,43 @@
         return haystack.includes(q);
       });
     }
-    const list = sortedByCreatedDesc(base);
-    if(list.length === 0){
+    if(base.length === 0){
       const scopeTxt = searchQuery.trim()
         ? `không tìm thấy lịch nào khớp với "${searchQuery.trim()}"`
         : (viewMode === 'all' ? 'chưa có lịch live nào' : `chưa có lịch live cho tháng ${viewMonth+1}/${viewYear}`);
       wrap.innerHTML = `<div class="empty"><div class="big">Chưa có lịch live</div><div class="small">${searchQuery.trim() ? '' : 'Nhấn nút + để thêm — '}hiện ${scopeTxt}</div></div>`;
       return;
     }
-    wrap.innerHTML = list.map(e => {
-      const d = new Date(e.date + 'T00:00:00');
+    const dayGroups = groupEntriesByDate(base);
+    wrap.innerHTML = dayGroups.map(dg => {
+      const d = new Date(dg.date + 'T00:00:00');
       const wd = weekdayShort[d.getDay()];
-      return `<div class="entry-card" data-id="${e.id}">
+      const brandsHtml = dg.brandGroups.map(bg => {
+        const slotsHtml = bg.items.map(e => `
+          <div class="group-slot-row" data-id="${e.id}">
+            <div class="group-slot-main">
+              <span class="slot-time">${e.startTime || '--:--'} – ${e.endTime || '--:--'}</span>
+              <span class="slot-amount">${moneyFmt.format(Number(e.amount)||0)}₫${e.isOverride ? '<span class="ov">sửa tay</span>' : ''}</span>
+            </div>
+            <button type="button" class="entry-del-btn" data-id="${e.id}" aria-label="Xoá lịch">${ICON_TRASH}</button>
+          </div>`).join('');
+        return `<div class="brand-subgroup">
+          <div class="group-name">${escapeHtml(bg.brandName || 'Chưa rõ brand')}</div>
+          <div class="group-slots">${slotsHtml}</div>
+        </div>`;
+      }).join('');
+      return `<div class="entry-card entry-group-card">
         <div class="datebox"><div class="dd">${pad2(d.getDate())}/${pad2(d.getMonth()+1)}</div><div class="wd">${wd}</div></div>
         <div class="divider"></div>
-        <div class="info">
-          <div class="name">${escapeHtml(e.brandName || 'Chưa rõ brand')}</div>
-          <div class="time">${e.startTime || '--:--'} – ${e.endTime || '--:--'}</div>
-        </div>
-        <div class="amount">${moneyFmt.format(Number(e.amount)||0)}₫${e.isOverride ? '<span class="ov">sửa tay</span>' : ''}</div>
-        <button type="button" class="entry-del-btn" data-id="${e.id}" aria-label="Xoá lịch">🗑️</button>
+        <div class="day-body">${brandsHtml}</div>
       </div>`;
     }).join('');
-    wrap.querySelectorAll('.entry-card').forEach(el => el.addEventListener('click', () => openEntryModal(el.dataset.id)));
+    wrap.querySelectorAll('.group-slot-row').forEach(row => {
+      row.addEventListener('click', (ev) => {
+        if(ev.target.closest('.entry-del-btn')) return;
+        openEntryModal(row.dataset.id);
+      });
+    });
     wrap.querySelectorAll('.entry-del-btn').forEach(btn => {
       btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -1227,9 +1376,14 @@
     refreshFDateReadout();
     entryOverlay.classList.add('show');
   }
-  function closeEntryModal(){ entryOverlay.classList.remove('show'); editingEntryId = null; disarmDelete(); }
+  function closeEntryModal(){
+    entryOverlay.classList.remove('show');
+    editingEntryId = null;
+    disarmDelete();
+    if(monthGridOverlay.classList.contains('show')) refreshExistingForBrand();
+  }
   document.getElementById('btnCancel').addEventListener('click', closeEntryModal);
-  entryOverlay.addEventListener('click', (ev) => { if(ev.target === entryOverlay) closeEntryModal(); });
+  // Không đóng khi chạm ra ngoài — tránh mất dữ liệu đang nhập do lỡ tay. Phải bấm "Huỷ" để thoát.
 
   document.getElementById('btnSave').addEventListener('click', () => {
     clearEntryError();
@@ -1369,7 +1523,7 @@
   }
   function closeRateEditModal(){ rateEditOverlay.classList.remove('show'); editingRateId = null; disarmRateDelete(); }
   document.getElementById('rateCancel').addEventListener('click', closeRateEditModal);
-  rateEditOverlay.addEventListener('click', (ev) => { if(ev.target === rateEditOverlay) closeRateEditModal(); });
+  // Không đóng khi chạm ra ngoài — tránh mất dữ liệu đang nhập do lỡ tay.
   document.getElementById('rateSave').addEventListener('click', () => {
     clearRateError();
     const name = rName.value.trim();
@@ -1526,7 +1680,7 @@
   }
   document.getElementById('slotsBtn').addEventListener('click', openSlotsModal);
   document.getElementById('slotsClose').addEventListener('click', () => slotsOverlay.classList.remove('show'));
-  slotsOverlay.addEventListener('click', (ev) => { if(ev.target === slotsOverlay) slotsOverlay.classList.remove('show'); });
+  // Không đóng khi chạm ra ngoài — tránh mất khung giờ đang gõ dở do lỡ tay.
   document.getElementById('slotsAddBtn').addEventListener('click', () => {
     slotFormError.style.display = 'none';
     const parsed = parseSlotText(newSlotInput.value);
@@ -1550,187 +1704,242 @@
     });
   });
 
-  // ================= BATCH ADD (nhiều lịch cùng lúc) =================
-  const batchOverlay = document.getElementById('batchOverlay');
-  const batchRowsWrap = document.getElementById('batchRows');
-  const batchStatus = document.getElementById('batchStatus');
+  // ================= THÊM LỊCH (chọn brand trước, điền giờ theo từng ngày trong tháng) =================
+  const monthGridOverlay = document.getElementById('monthGridOverlay');
+  const mgDayListEl = document.getElementById('mgDayList');
+  const mgBrandSelect = document.getElementById('mgBrand');
+  const mgStatus = document.getElementById('mgStatus');
+  let mgYear, mgMonth;
+  let mgDays = [];
 
-  function createBatchRow(){
-    const rowEl = document.createElement('div');
-    rowEl.className = 'batch-row';
-    rowEl.innerHTML = `
-      <div class="row-top">
-        <select class="b-rate"></select>
-        <div class="date-display-fake b-date-overlay"></div>
-        <input type="hidden" class="b-date">
-        <button type="button" class="row-del" aria-label="Xoá dòng">×</button>
+  function createSlotUnit(dayObj, isFirst){
+    const unitEl = document.createElement('div');
+    unitEl.className = 'mg-slot-unit';
+    unitEl.innerHTML = `
+      <div class="mg-slot-row">
+        <div class="mg-day-slot combo-wrap">
+          <input type="text" class="mg-slot-input" placeholder="Khung giờ" autocomplete="off">
+          <button type="button" class="combo-clear-btn" aria-label="Xoá khung giờ">×</button>
+          <div class="combo-list mg-combo"></div>
+        </div>
+        <div class="mg-day-amount">—</div>
+        ${isFirst ? '' : '<button type="button" class="mg-remove-slot-btn" aria-label="Xoá khung giờ">×</button>'}
       </div>
-      <div class="row-mid combo-wrap">
-        <input type="text" class="b-slot" placeholder="Khung giờ, VD: 20:00–22:00" autocomplete="off">
-        <div class="combo-list b-combo"></div>
-      </div>
-      <div class="row-bottom">
-        <input type="number" class="b-amount" placeholder="Số tiền (đ)" min="0" step="1000" inputmode="numeric">
-      </div>
-      <div class="row-warn"></div>`;
-    batchRowsWrap.appendChild(rowEl);
+      <div class="mg-slot-warn"></div>`;
+    dayObj.slotsWrapEl.insertBefore(unitEl, dayObj.addBtnEl);
 
-    const rateSelect = rowEl.querySelector('.b-rate');
-    const dateInput = rowEl.querySelector('.b-date');
-    const dateReadoutEl = rowEl.querySelector('.b-date-overlay');
-    const slotInput = rowEl.querySelector('.b-slot');
-    const comboEl = rowEl.querySelector('.b-combo');
-    const amountInput = rowEl.querySelector('.b-amount');
-    const warnEl = rowEl.querySelector('.row-warn');
-    const delBtn = rowEl.querySelector('.row-del');
+    const rowEl = unitEl.querySelector('.mg-slot-row');
+    const slotInput = unitEl.querySelector('.mg-slot-input');
+    const comboEl = unitEl.querySelector('.mg-combo');
+    const amountEl = unitEl.querySelector('.mg-day-amount');
+    const warnEl = unitEl.querySelector('.mg-slot-warn');
+    const removeBtn = unitEl.querySelector('.mg-remove-slot-btn');
 
-    rateSelect.innerHTML = buildRateOptionsHTML(null, '— Brand —');
-    dateInput.value = viewMode === 'all' ? todayISO() : isoDate(new Date(viewYear, viewMonth, Math.min(new Date().getDate(), 28)));
-    dateReadoutEl.textContent = weekdayReadoutTextShort(dateInput.value);
-    dateReadoutEl.addEventListener('click', () => {
-      openDatePicker(dateInput.value, (iso) => { dateInput.value = iso; dateReadoutEl.textContent = weekdayReadoutTextShort(iso); });
-    });
-
-    const rowObj = { rowEl, rateSelect, dateInput, slotInput, amountInput, warnEl, startTime: '', endTime: '' };
-
-    function recompute(){
-      const r = rateById(rateSelect.value);
-      const hours = durationHours(rowObj.startTime, rowObj.endTime);
-      if(r && hours > 0){ amountInput.value = Math.round(r.rate * hours); }
-    }
-    wireSlotCombo(slotInput, comboEl, (start, end) => { rowObj.startTime = start; rowObj.endTime = end; recompute(); });
-    rateSelect.addEventListener('change', recompute);
-    delBtn.addEventListener('click', () => { rowEl.remove(); batchRows = batchRows.filter(r => r !== rowObj); });
-
-    batchRows.push(rowObj);
-    return rowObj;
-  }
-
-  function openBatchModal(){
-    batchRowsWrap.innerHTML = '';
-    batchRows = [];
-    batchStatus.textContent = rates.length === 0 ? 'Chưa có brand nào — thêm ở Bảng giá trước khi thêm lịch.' : '';
-    for(let i=0; i<3; i++) createBatchRow();
-    batchOverlay.classList.add('show');
-  }
-  function closeBatchModal(){ batchOverlay.classList.remove('show'); }
-
-  document.getElementById('batchBtn').addEventListener('click', openBatchModal);
-  document.getElementById('batchAddRow').addEventListener('click', () => createBatchRow());
-  document.getElementById('batchClose').addEventListener('click', closeBatchModal);
-  batchOverlay.addEventListener('click', (ev) => { if(ev.target === batchOverlay) closeBatchModal(); });
-
-  function doBatchSaveAll(){
-    batchRows.forEach(row => { row.warnEl.style.display = 'none'; row.rowEl.classList.remove('row-error'); });
-
-    // Bước 1: gom các dòng hợp lệ (đủ thông tin), đánh dấu dòng thiếu thông tin
-    const candidates = [];
-    let incompleteCount = 0;
-    const incompleteRows = [];
-
-    batchRows.forEach(row => {
-      const rateId = row.rateSelect.value;
-      const date = row.dateInput.value;
-      const start = row.startTime;
-      const end = row.endTime;
-
-      const isEmpty = !rateId && !row.slotInput.value.trim() && !Number(row.amountInput.value) && !date;
-      if(isEmpty) return; // dòng trống hoàn toàn, bỏ qua không giữ lại
-
-      if(!rateId || !date || !start || !end){
-        row.warnEl.textContent = 'Thiếu brand, ngày hoặc khung giờ hợp lệ.';
-        row.warnEl.style.display = 'block';
-        row.rowEl.classList.add('row-error');
-        incompleteCount++;
-        incompleteRows.push(row);
-        return;
+    const slotObj = { date: dayObj.date, unitEl, rowEl, slotInput, amountEl, warnEl, startTime: '', endTime: '' };
+    slotObj.recompute = function(){
+      const r = rateById(mgBrandSelect.value);
+      const hours = durationHours(slotObj.startTime, slotObj.endTime);
+      if(r && hours > 0){
+        const amt = Math.round(r.rate * hours);
+        amountEl.textContent = moneyFmt.format(amt) + 'đ';
+        rowEl.classList.add('mg-has-value');
+      }else{
+        amountEl.textContent = '—';
+        rowEl.classList.remove('mg-has-value');
       }
-      candidates.push({ row, rateId, date, start, end });
+    };
+    wireSlotCombo(slotInput, comboEl, (start, end) => { slotObj.startTime = start; slotObj.endTime = end; slotObj.recompute(); });
+    slotInput.addEventListener('input', () => {
+      if(!slotInput.value.trim()){ slotObj.startTime = ''; slotObj.endTime = ''; slotObj.recompute(); }
+    });
+    if(removeBtn){
+      removeBtn.addEventListener('click', () => {
+        unitEl.remove();
+        dayObj.slotRows = dayObj.slotRows.filter(s => s !== slotObj);
+      });
+    }
+    dayObj.slotRows.push(slotObj);
+    return slotObj;
+  }
+
+  function buildMonthGridDays(){
+    mgDayListEl.innerHTML = '';
+    mgDays = [];
+    const daysInMonth = new Date(mgYear, mgMonth + 1, 0).getDate();
+    for(let d = 1; d <= daysInMonth; d++){
+      const dateObj = new Date(mgYear, mgMonth, d);
+      const iso = isoDate(dateObj);
+      const wd = weekdayShort[dateObj.getDay()];
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'mg-day-item';
+      itemEl.innerHTML = `
+        <div class="mg-day-label"><span class="wd">${wd}</span>${pad2(d)}/${pad2(mgMonth+1)}</div>
+        <div class="mg-day-slots">
+          <div class="mg-existing-list"></div>
+          <button type="button" class="mg-add-slot-link">+ Thêm khung giờ khác</button>
+        </div>`;
+      mgDayListEl.appendChild(itemEl);
+
+      const slotsWrapEl = itemEl.querySelector('.mg-day-slots');
+      const addBtnEl = itemEl.querySelector('.mg-add-slot-link');
+      const existingListEl = itemEl.querySelector('.mg-existing-list');
+
+      const dayObj = { date: iso, slotsWrapEl, addBtnEl, existingListEl, slotRows: [] };
+      createSlotUnit(dayObj, true);
+      addBtnEl.addEventListener('click', () => createSlotUnit(dayObj, false));
+      mgDays.push(dayObj);
+    }
+    refreshExistingForBrand();
+  }
+
+  function refreshExistingForBrand(){
+    const rateId = mgBrandSelect.value;
+    mgDays.forEach(day => {
+      if(!rateId){ day.existingListEl.innerHTML = ''; return; }
+      const existing = entries.filter(e => e.rateId === rateId && e.date === day.date);
+      if(existing.length === 0){ day.existingListEl.innerHTML = ''; return; }
+      day.existingListEl.innerHTML = existing
+        .sort((a,b) => minutesOf(a.startTime) - minutesOf(b.startTime))
+        .map(e => `<div class="mg-existing-chip" data-id="${e.id}">✓ ${e.startTime}–${e.endTime} · ${moneyFmt.format(e.amount||0)}đ <span>đã có · bấm để sửa</span></div>`)
+        .join('');
+      day.existingListEl.querySelectorAll('.mg-existing-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const entryId = chip.dataset.id;
+          const e = entries.find(x => x.id === entryId);
+          if(!e) return;
+          const infoHtml = `<strong>${escapeHtml(e.brandName || '')}</strong><br>${weekdayReadoutText(e.date)}<br>${e.startTime}–${e.endTime} · ${moneyFmt.format(e.amount||0)}đ`;
+          openActionConfirm('Sửa lịch này?', infoHtml, () => {
+            openEntryModal(entryId);
+          });
+        });
+      });
+    });
+  }
+
+  function openMonthGridModal(){
+    mgYear = viewMode === 'all' ? new Date().getFullYear() : viewYear;
+    mgMonth = viewMode === 'all' ? new Date().getMonth() : viewMonth;
+    mgBrandSelect.innerHTML = buildRateOptionsHTML(null, '— Chọn brand —');
+    document.getElementById('mgNoRateHint').style.display = rates.length === 0 ? 'block' : 'none';
+    document.getElementById('mgMonthLabel').textContent = `${monthNames[mgMonth]}, ${mgYear}`;
+    mgStatus.textContent = '';
+    buildMonthGridDays();
+    monthGridOverlay.classList.add('show');
+  }
+  function closeMonthGridModal(){ monthGridOverlay.classList.remove('show'); }
+
+  document.getElementById('mgPrevMonth').addEventListener('click', () => {
+    mgMonth--; if(mgMonth < 0){ mgMonth = 11; mgYear--; }
+    document.getElementById('mgMonthLabel').textContent = `${monthNames[mgMonth]}, ${mgYear}`;
+    buildMonthGridDays();
+  });
+  document.getElementById('mgNextMonth').addEventListener('click', () => {
+    mgMonth++; if(mgMonth > 11){ mgMonth = 0; mgYear++; }
+    document.getElementById('mgMonthLabel').textContent = `${monthNames[mgMonth]}, ${mgYear}`;
+    buildMonthGridDays();
+  });
+  mgBrandSelect.addEventListener('change', () => {
+    mgDays.forEach(day => day.slotRows.forEach(s => s.recompute()));
+    refreshExistingForBrand();
+  });
+  document.getElementById('mgClose').addEventListener('click', closeMonthGridModal);
+  // Không đóng khi chạm ra ngoài — form này dài và dễ lỡ tay, phải bấm "Đóng" mới thoát.
+
+  document.getElementById('mgSaveAll').addEventListener('click', () => {
+    mgStatus.textContent = '';
+    const rateId = mgBrandSelect.value;
+    if(!rateId){ mgStatus.textContent = 'Vui lòng chọn brand trước khi lưu.'; return; }
+    const r = rateById(rateId);
+
+    const allSlots = [];
+    mgDays.forEach(day => day.slotRows.forEach(s => allSlots.push(s)));
+    const filled = allSlots.filter(s => s.startTime && s.endTime);
+    filled.forEach(s => {
+      s.warnEl.style.display = 'none';
+      s.rowEl.classList.remove('mg-row-error');
+      s.conflictsExisting = [];
+      s.conflictsBatch = [];
     });
 
-    // Bước 2: kiểm tra từng dòng với các lịch ĐÃ LƯU trước đó
-    candidates.forEach(c => { c.conflictsExisting = findConflicts(c.date, c.start, c.end, null); });
+    if(filled.length === 0){ mgStatus.textContent = 'Chưa điền khung giờ cho ngày nào.'; return; }
 
-    // Bước 3: kiểm tra chéo giữa các dòng ĐANG THÊM với nhau — nếu 2 dòng trùng nhau thì cả 2 đều bị chặn
-    for(let i = 0; i < candidates.length; i++){
-      for(let j = i+1; j < candidates.length; j++){
-        const a = candidates[i], b = candidates[j];
+    // Kiểm tra trùng với dữ liệu đã lưu
+    filled.forEach(s => { s.conflictsExisting = findConflicts(s.date, s.startTime, s.endTime, null); });
+    // Kiểm tra trùng giữa các khung giờ đang nhập cùng ngày với nhau (VD gõ nhầm 2 khung chồng giờ)
+    for(let i = 0; i < filled.length; i++){
+      for(let j = i+1; j < filled.length; j++){
+        const a = filled[i], b = filled[j];
         if(a.date !== b.date) continue;
-        if(doOverlap(a.start, a.end, b.start, b.end)){
-          (a.conflictsBatch = a.conflictsBatch || []).push(b);
-          (b.conflictsBatch = b.conflictsBatch || []).push(a);
+        if(doOverlap(a.startTime, a.endTime, b.startTime, b.endTime)){
+          a.conflictsBatch.push(b);
+          b.conflictsBatch.push(a);
         }
       }
     }
 
-    // Bước 4: lưu những dòng KHÔNG trùng với bất kỳ ai (đã lưu lẫn dòng khác trong batch)
-    let savedCount = 0, conflictCount = 0;
-    const remaining = [...incompleteRows];
-    const batchCreatedBase = Date.now();
-
-    candidates.forEach((c, idx) => {
-      const hasConflict = (c.conflictsExisting && c.conflictsExisting.length > 0) || (c.conflictsBatch && c.conflictsBatch.length > 0);
+    const toSave = [];
+    const conflictList = [];
+    filled.forEach(s => {
+      const hasConflict = (s.conflictsExisting && s.conflictsExisting.length > 0) || (s.conflictsBatch && s.conflictsBatch.length > 0);
       if(hasConflict){
         let msg;
-        if(c.conflictsExisting && c.conflictsExisting.length > 0){
-          const e = c.conflictsExisting[0];
-          msg = `Trùng/sát giờ với "${e.brandName}" (${e.startTime}–${e.endTime}) đã có trong lịch.`;
+        if(s.conflictsExisting && s.conflictsExisting.length > 0){
+          const c = s.conflictsExisting[0];
+          msg = `Trùng/sát giờ với "${c.brandName}" (${c.startTime}–${c.endTime}) đã có trong lịch.`;
         }else{
-          const other = c.conflictsBatch[0];
-          const otherRateName = rateById(other.rateId)?.name || '';
-          msg = `Trùng/sát giờ với dòng khác trong danh sách (${other.start}–${other.end}${otherRateName ? ' · ' + otherRateName : ''}).`;
+          const other = s.conflictsBatch[0];
+          msg = `Trùng/sát giờ với khung giờ khác cùng ngày (${other.startTime}–${other.endTime}).`;
         }
-        c.row.warnEl.textContent = msg;
-        c.row.warnEl.style.display = 'block';
-        c.row.rowEl.classList.add('row-error');
-        conflictCount++;
-        remaining.push(c.row);
+        s.warnEl.textContent = msg;
+        s.warnEl.style.display = 'block';
+        s.rowEl.classList.add('mg-row-error');
+        conflictList.push(s);
       }else{
-        const r = rateById(c.rateId);
-        const hours = durationHours(c.start, c.end);
-        const computed = Math.round((r ? r.rate : 0) * hours);
-        const amount = Number(c.row.amountInput.value) || 0;
-        const isOverride = amount !== computed;
-        entries.push({ id: uid(), rateId: c.rateId, brandName: r ? r.name : 'Không rõ', date: c.date, startTime: c.start, endTime: c.end, amount, isOverride, createdAt: batchCreatedBase + idx });
-        savedCount++;
-        c.row.rowEl.remove();
+        toSave.push(s);
       }
     });
+    const conflictCount = conflictList.length;
 
-    batchRows = remaining;
-    if(savedCount > 0){ saveEntries(); showToast(`Đã lưu ${savedCount} lịch.`); }
-
-    const parts = [];
-    if(savedCount) parts.push(`Đã lưu ${savedCount} lịch`);
-    if(conflictCount) parts.push(`${conflictCount} lịch bị trùng giờ (chưa lưu)`);
-    if(incompleteCount) parts.push(`${incompleteCount} lịch thiếu thông tin`);
-    batchStatus.textContent = parts.length ? parts.join(' · ') + '.' : 'Chưa có lịch nào để lưu — điền thông tin rồi bấm Lưu tất cả.';
-
-    if(savedCount > 0) renderAll();
-    if(batchRows.length === 0 && savedCount > 0) closeBatchModal();
-  }
-
-  document.getElementById('batchSaveAll').addEventListener('click', () => {
-    // Gom trước các dòng có vẻ hợp lệ để hiển thị tóm tắt xác nhận
-    const preview = [];
-    batchRows.forEach(row => {
-      const rateId = row.rateSelect.value;
-      const date = row.dateInput.value;
-      const start = row.startTime, end = row.endTime;
-      const isEmpty = !rateId && !row.slotInput.value.trim() && !Number(row.amountInput.value) && !date;
-      if(isEmpty || !rateId || !date || !start || !end) return;
-      const r = rateById(rateId);
-      preview.push(`${escapeHtml(r ? r.name : '—')} · ${weekdayReadoutTextShort(date)} · ${start}–${end}`);
-    });
-
-    if(preview.length === 0){
-      doBatchSaveAll(); // không có dòng hợp lệ nào -> chạy thẳng để hiển thị lỗi thiếu thông tin trên từng dòng
+    if(toSave.length === 0){
+      mgStatus.textContent = `Cả ${conflictCount} khung giờ đều bị trùng, chưa lưu cái nào.`;
       return;
     }
 
-    const shown = preview.slice(0, 6).join('<br>');
-    const more = preview.length > 6 ? `<br>...và ${preview.length - 6} lịch khác` : '';
-    openActionConfirm(`Xác nhận thêm ${preview.length} lịch live`, shown + more, doBatchSaveAll);
+    const preview = toSave.slice(0, 6).map(s => `${weekdayReadoutTextShort(s.date)} · ${s.startTime}–${s.endTime}`).join('<br>');
+    const more = toSave.length > 6 ? `<br>...và ${toSave.length - 6} khung giờ khác` : '';
+
+    let conflictNote = '';
+    if(conflictCount > 0){
+      const conflictPreview = conflictList.slice(0, 4).map(s => `${weekdayReadoutTextShort(s.date)} · ${s.startTime}–${s.endTime}`).join('<br>');
+      const conflictMore = conflictList.length > 4 ? `<br>...và ${conflictList.length - 4} khung giờ khác` : '';
+      conflictNote = `<br><br><span style="color:var(--red); font-weight:700;">⚠️ ${conflictCount} khung giờ bị trùng/sát giờ — sẽ KHÔNG được lưu:</span><br>${conflictPreview}${conflictMore}`;
+    }
+
+    const title = `Xác nhận thêm ${toSave.length} lịch cho "${escapeHtml(r.name)}"`;
+
+    openActionConfirm(title, preview + more + conflictNote, () => {
+      const base = Date.now();
+      toSave.forEach((s, idx) => {
+        const hours = durationHours(s.startTime, s.endTime);
+        const amount = Math.round(r.rate * hours);
+        entries.push({ id: uid(), rateId, brandName: r.name, date: s.date, startTime: s.startTime, endTime: s.endTime, amount, isOverride: false, createdAt: base + idx });
+        // reset khung giờ đã lưu để tránh lưu trùng nếu bấm "Lưu tất cả" lần nữa
+        s.slotInput.value = '';
+        s.startTime = ''; s.endTime = '';
+        s.recompute();
+      });
+      saveEntries();
+      showToast(`Đã lưu ${toSave.length} lịch cho ${r.name}.`);
+      refreshExistingForBrand();
+
+      if(conflictCount > 0){
+        mgStatus.textContent = `Đã lưu ${toSave.length} khung giờ · ${conflictCount} bị trùng giờ (xem cảnh báo đỏ bên dưới).`;
+      }else{
+        closeMonthGridModal();
+      }
+      renderAll();
+    });
   });
 
   // ---------- Nav ----------
@@ -1755,7 +1964,7 @@
   });
   document.getElementById('tabList').addEventListener('click', () => setTab('list'));
   document.getElementById('tabCal').addEventListener('click', () => setTab('cal'));
-  document.getElementById('fabAdd').addEventListener('click', () => openEntryModal(null));
+  document.getElementById('fabAdd').addEventListener('click', () => openMonthGridModal());
   document.getElementById('searchInput').addEventListener('input', (ev) => { searchQuery = ev.target.value; renderList(); });
 
   // ---------- Init ----------
